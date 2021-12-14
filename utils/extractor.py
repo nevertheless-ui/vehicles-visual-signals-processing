@@ -66,14 +66,17 @@ def resize_image_with_fill(image, target_image_resolution):
     border_v = 0
     border_h = 0
     img_w, img_h = image.shape[0], image.shape[1]
-    aspect_ratio = target_image_resolution[0] / target_image_resolution[1]
+    aspect_ratio = \
+        target_image_resolution[0] / target_image_resolution[1]
 
     if aspect_ratio >= (img_w/img_h):
         border_v = int(((aspect_ratio*img_h)-img_w)/2)
     else:
         border_h = int(((aspect_ratio*img_w)-img_h)/2)
 
-    image = cv2.copyMakeBorder(image, border_v, border_v, border_h, border_h, cv2.BORDER_CONSTANT, 0)
+    image = cv2.copyMakeBorder(image, border_v, border_v,
+                               border_h, border_h,
+                               cv2.BORDER_CONSTANT, 0)
     image = cv2.resize(image, target_image_resolution)
 
     return image
@@ -99,7 +102,8 @@ def create_chunk_subdir(DATAPATH, VIDEO_FILE_NAME):
     return NEW_DIR_PATH, NEW_CHUNK_PATH
 
 
-def extract_chunks_from_video(DATAPATH, VIDEO_FILE_NAME, annotations, RESOLUTION=c.EXTRACTOR_RESOLUTION):
+def extract_chunks_from_video(DATAPATH, VIDEO_FILE_NAME, annotations,
+                              RESOLUTION=c.EXTRACTOR_RESOLUTION):
     _, NEW_CHUNK_PATH = create_chunk_subdir(DATAPATH, VIDEO_FILE_NAME)
     CHANGE_FPS_FLAG = False
     FPS_RATIO = 1.0
@@ -121,7 +125,8 @@ def extract_chunks_from_video(DATAPATH, VIDEO_FILE_NAME, annotations, RESOLUTION
         MAX_CHUNKS = TRACK_LENGTH//VIDEO_CHUNK_DURATION
 
         if MAX_CHUNKS == 0:
-            print(f"Not enough data for cut from {VIDEO_FILE_NAME} on track #{track['@id']}...")
+            print(f"Not enough data for cut from {VIDEO_FILE_NAME}" \
+                  f" on track #{track['@id']}...")
             continue
         else:
             CHUNK_NUM = 0
@@ -161,13 +166,14 @@ def extract_chunks_from_video(DATAPATH, VIDEO_FILE_NAME, annotations, RESOLUTION
                         shutil.rmtree(NEW_CHUNK_PATH)
                         continue
                     else:
-                        box_coordinate_tags = ['@xtl', '@ytl', '@xbr', '@ybr']
+                        box_coordinate_tags = ['@xtl', '@ytl',
+                                               '@xbr', '@ybr']
 
                         # Box coordinates: (A[ax, ay], B[bx, by])
                         ax, ay, bx, by = \
                             tuple(round(float(annotation_data[i])) for i in box_coordinate_tags)
 
-                        video_capture.set(0, int(annotation_data['@frame']))
+                        video_capture.set(1, int(annotation_data['@frame']))
                         _, frame = video_capture.read()
 
                         image_box = frame[ay:by, ax:bx]
@@ -189,18 +195,21 @@ def get_chunks_from_ts_data(DATAPATH, CHUNK_DURATION):
     print(f"Link to working directory:\n{DATAPATH}"
             f"\nChunk size: {CHUNK_DURATION} sec.")
 
-    for video_file_path in tqdm(glob(os.path.join(DATAPATH, f'*.ts')), desc='Video files processing'):
+    for video_file_path in tqdm(glob(os.path.join(DATAPATH, f'*.ts')),
+                                desc='Video files processing'):
         if not os.path.isfile(video_file_path):
             continue
 
         else:
             VIDEO_FILE_NAME = os.path.basename(video_file_path)
-            ANNOTATION_FILE_MASK = os.path.join(DATAPATH, f'task_{os.path.basename(VIDEO_FILE_NAME)}*.zip')
+            ANNOTATION_FILE_MASK = \
+                os.path.join(DATAPATH, f'task_{os.path.basename(VIDEO_FILE_NAME)}*.zip')
 
             annotations = glob(ANNOTATION_FILE_MASK)
 
             assert len(annotations) < 2, \
-                f"{VIDEO_FILE_NAME} has confisuing annotation archive name: {len(annotations)} files found."
+                f"{VIDEO_FILE_NAME} has confisuing annotation archive name:" \
+                f" {len(annotations)} files found."
 
             if len(annotations) == 0:
                 print(f'No annotation for "{VIDEO_FILE_NAME}". Skipping...')
@@ -210,4 +219,5 @@ def get_chunks_from_ts_data(DATAPATH, CHUNK_DURATION):
                 extract_chunks_from_video(DATAPATH, VIDEO_FILE_NAME, annotations)
 
 if __name__ == '__main__':
-    get_chunks_from_ts_data(DATAPATH=c.DATA_DIR_PATH, CHUNK_DURATION=c.VIDEO_CHUNK_SIZE)
+    get_chunks_from_ts_data(DATAPATH=c.DATA_DIR_PATH,
+                            CHUNK_DURATION=c.VIDEO_CHUNK_SIZE)
