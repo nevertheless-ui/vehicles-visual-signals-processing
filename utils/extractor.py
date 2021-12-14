@@ -219,5 +219,7 @@ def get_chunks_from_ts_data(DATAPATH, CHUNK_DURATION):
                 extract_chunks_from_video(DATAPATH, VIDEO_FILE_NAME, annotations)
 
 if __name__ == '__main__':
+    assert os.path.isdir(c.DATA_DIR_PATH), \
+        f"Input directory {c.DATA_DIR_PATH} not found!"
     get_chunks_from_ts_data(DATAPATH=c.DATA_DIR_PATH,
                             CHUNK_DURATION=c.VIDEO_CHUNK_SIZE)
