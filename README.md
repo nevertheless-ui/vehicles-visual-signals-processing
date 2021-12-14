@@ -1,6 +1,7 @@
 # vehicles-visual-signals-processing
 Project for vehicles signals recognition for Master Degree Paper, Russia, Moscow, MISIS 2021-2022
-Python version: 3.9.9
+- Python version: 3.9.9
+- Project is active
 
 
 DATA:
