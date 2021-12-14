@@ -5,7 +5,7 @@ Project for vehicles signals recognition for Master Degree Paper, Russia, Moscow
 - Project is active
 
 
-## DATASET COOKBOOK:
+### DATASET COOKBOOK:
 
 To start video chunks from video:
 - python .\utils\extractor.py
@@ -27,7 +27,7 @@ Extractor description:
 - Example: "REC25915.ts_chunk_X_Y.mjpg" (X - track number, Y = chunk number)
 
 
-## HINTS:
+### HINTS:
 1. Creating virtual environment:
 - python -m venv .venv
 
