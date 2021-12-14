@@ -2,7 +2,7 @@
 # Author: Filippenko Artyom, 2021
 # MISIS Master Degree Project
 # Created: 2021.12.11
-# Modified: 2021.12.11
+# Modified: 2021.12.14
 # TODO - add FPS ratio for convertion
 
 
