@@ -102,7 +102,7 @@ def create_chunk_subdir(DATAPATH, VIDEO_FILE_NAME):
     return NEW_DIR_PATH, NEW_CHUNK_PATH
 
 
-def extract_chunks_from_video(DATAPATH, VIDEO_FILE_NAME, annotations,
+def process_video_file(DATAPATH, VIDEO_FILE_NAME, annotations,
                               RESOLUTION=c.EXTRACTOR_RESOLUTION):
     _, NEW_CHUNK_PATH = create_chunk_subdir(DATAPATH, VIDEO_FILE_NAME)
     CHANGE_FPS_FLAG = False
@@ -216,7 +216,7 @@ def get_chunks_from_ts_data(DATAPATH, CHUNK_DURATION):
                 pass
 
             else:
-                extract_chunks_from_video(DATAPATH, VIDEO_FILE_NAME, annotations)
+                process_video_file(DATAPATH, VIDEO_FILE_NAME, annotations)
 
 if __name__ == '__main__':
     assert os.path.isdir(c.DATA_DIR_PATH), \
