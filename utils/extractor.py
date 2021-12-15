@@ -2,8 +2,7 @@
 # Author: Filippenko Artyom, 2021
 # MISIS Master Degree Project
 # Created: 2021.12.11
-# Modified: 2021.12.14
-# TODO - add FPS ratio for convertion
+# Modified: 2021.12.16
 
 
 import cv2
@@ -16,6 +15,7 @@ from zipfile import ZipFile
 from glob import glob
 
 import constants as c
+
 
 def create_dir(dir_name):
     if not os.path.isdir(dir_name):
@@ -87,6 +87,7 @@ def get_annotation(annotations):
     with ZipFile(annotation_file_path) as zipfile:
         with zipfile.open('annotations.xml') as xml_file:
             video_annotation = xmltodict.parse(xml_file.read())
+
     return video_annotation
 
 
@@ -99,11 +100,30 @@ def create_chunk_subdir(DATAPATH, VIDEO_FILE_NAME):
     if os.path.exists(NEW_DIR_PATH) and os.path.isdir(NEW_DIR_PATH):
         shutil.rmtree(NEW_DIR_PATH)
     os.mkdir(NEW_DIR_PATH)
+
     return NEW_DIR_PATH, NEW_CHUNK_PATH
 
 
 def process_video_file(DATAPATH, VIDEO_FILE_NAME, annotations,
                               RESOLUTION=c.EXTRACTOR_RESOLUTION):
+    """Method for processing video file.
+
+    Chunks extraction is achived by parsing boxes with metadata.
+    1. Get first annotation data
+    2. CHECK: Does it have enough data to build chank?
+    3. Get frame number from annotation
+    4. Get frame from capture
+    5. Change resolution of image
+    6. Append frame to video chunk
+
+    Args:
+        DATAPATH (str): Path to folder with video file
+        VIDEO_FILE_NAME (str): Name of videofile
+        annotations (OrderedDict): Dict with boxes of tracks
+        RESOLUTION (tuple, optional): Output file resolution as (x, y). Defaults to c.EXTRACTOR_RESOLUTION.
+    """
+    # TODO: refactor this. Method is too long
+    # TODO: add FPS ratio for convertion
     _, NEW_CHUNK_PATH = create_chunk_subdir(DATAPATH, VIDEO_FILE_NAME)
     CHANGE_FPS_FLAG = False
     FPS_RATIO = 1.0
@@ -116,7 +136,6 @@ def process_video_file(DATAPATH, VIDEO_FILE_NAME, annotations,
     if FPS != c.TARGET_FPS:
         print('Source and target FPS are not the same')
         FPS_RATIO = c.TARGET_FPS / FPS
-
 
     video_annotation = get_annotation(annotations)
 
@@ -217,6 +236,7 @@ def get_chunks_from_ts_data(DATAPATH, CHUNK_DURATION):
 
             else:
                 process_video_file(DATAPATH, VIDEO_FILE_NAME, annotations)
+
 
 if __name__ == '__main__':
     assert os.path.isdir(c.DATA_DIR_PATH), \
