@@ -16,6 +16,8 @@ Contains of MJPEG files with 60 frames each (2 seconds) with 2 classes (tail-lig
 To start video chunks from video:
 - python .\utils\extractor.py
 
+Example: [raw_data](https://drive.google.com/file/d/1LLeEocagJBVZa4zk1njnUfN_9wyF0KTc/view?usp=sharing)
+
 Extractor description:
 1. Default directory for input video files: "data\raw_data"
 2. Natively supported video file format:
