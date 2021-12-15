@@ -5,6 +5,12 @@ Project for vehicles signals recognition for Master Degree Paper, Russia, Moscow
 - Project is active
 
 
+### DATASETS
+
+- [Baseline dataset](https://drive.google.com/file/d/1CFDdmcM0Uq_-6dC8D8aA-VsR2-XPrqdZ/view?usp=sharing)
+Contains of MJPEG files with 60 frames each (2 seconds) with 2 classes (tail-lights anda break-lights)
+
+
 ### DATASET COOKBOOK:
 
 To start video chunks from video:
