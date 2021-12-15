@@ -1,13 +1,13 @@
 # vehicles-visual-signals-processing
 Project for vehicles signals recognition for Master Degree Paper, Russia, Moscow, MISIS 2021-2022
 - Python version: 3.9.9
-- Annotation tool: CVAT (https://github.com/openvinotoolkit/cvat)
+- Annotation tool: [CVAT](https://github.com/openvinotoolkit/cvat)
 - Project is active
 
 
 ### DATASETS
 
-- [Baseline dataset](https://drive.google.com/file/d/1CFDdmcM0Uq_-6dC8D8aA-VsR2-XPrqdZ/view?usp=sharing)
+- [Baseline dataset.](https://drive.google.com/file/d/1CFDdmcM0Uq_-6dC8D8aA-VsR2-XPrqdZ/view?usp=sharing)
 Contains of MJPEG files with 60 frames each (2 seconds) with 2 classes (tail-lights anda break-lights)
 
 
