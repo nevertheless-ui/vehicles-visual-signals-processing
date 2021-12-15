@@ -9,7 +9,7 @@ Project for vehicles signals recognition for Master Degree Paper, Russia, Moscow
 
 - [Baseline dataset.](https://drive.google.com/file/d/1CFDdmcM0Uq_-6dC8D8aA-VsR2-XPrqdZ/view?usp=sharing)
 
-Contains MJPG files with 60 frames each (2 seconds) with 2 classes: tail-lights(227 items) and break-lights(90 items)
+Contains MJPG files with 60 frames each (2 seconds) with 2 classes: tail-lights (227 items) and break-lights (90 items)
 
 
 ### DATASET COOKBOOK:
