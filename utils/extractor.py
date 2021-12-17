@@ -125,17 +125,17 @@ def process_video_file(DATAPATH, VIDEO_FILE_NAME, annotations,
     # TODO: refactor this. Method is too long
     # TODO: add FPS ratio for convertion
     _, NEW_CHUNK_PATH = create_chunk_subdir(DATAPATH, VIDEO_FILE_NAME)
-    CHANGE_FPS_FLAG = False
-    FPS_RATIO = 1.0
+    #CHANGE_FPS_FLAG = False
+    #FPS_RATIO = 1.0
 
     video_capture = cv2.VideoCapture(os.path.join(DATAPATH, VIDEO_FILE_NAME))
     codec = cv2.VideoWriter_fourcc('M', 'J', 'P', 'G')
     FPS, _ , _ = capture_info(video_capture)
     VIDEO_CHUNK_DURATION = FPS * c.VIDEO_CHUNK_SIZE
 
-    if FPS != c.TARGET_FPS:
-        print('Source and target FPS are not the same')
-        FPS_RATIO = c.TARGET_FPS / FPS
+    #if FPS != c.TARGET_FPS:
+        #print('Source and target FPS are not the same')
+        #FPS_RATIO = c.TARGET_FPS / FPS
 
     video_annotation = get_annotation(annotations)
 
