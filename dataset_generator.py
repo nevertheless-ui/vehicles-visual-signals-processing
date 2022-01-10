@@ -24,8 +24,37 @@ class ExtractionTask:
 
 
     def read_annotation(self):
-        self.annotation_data = \
+        self.annotation_file = \
             annotation_parser.get_annotation(self.annotation_path)
+
+        self.annotation_meta = self.annotation_file['annotations']['meta']
+        self.annotation_tracks = self.annotation_file['annotations']['track']
+
+        self.source_name = self.annotation_meta['source']
+        self.frames_size = self.annotation_meta['task']['size']
+        self.start_frame = self.annotation_meta['task']['start_frame']
+        self.stop_frame = self.annotation_meta['task']['stop_frame']
+        self.video_width, self.video_height = \
+            self.annotation_meta['task']['original_size'].values()
+
+        self.tracks_number = len(self.annotation_tracks)
+        self.tracks_size = {}
+        for id, track in enumerate(self.annotation_tracks):
+            self.tracks_size[id] = len(track['box'])
+
+
+
+    def show_info(self):
+        for attribute in [self.source_name, self.frames_size,
+                          self.tracks_number, self.tracks_size,
+                          self.video_width, self.video_height]:
+            print(attribute)
+        try:
+            print(self.annotation_tracks[0]['box'][0]['attribute'][0]['@name'])
+            print(self.annotation_tracks[0]['box'][0]['attribute'][0]['#text'])
+        except KeyError:
+            pass
+
 
 
     def create_output_dir(self):
@@ -50,22 +79,26 @@ def extract_video_from_path(video_path):
     video_files = \
         [file for file in extract_supported_filenames(all_files)]
 
-    video_files = video_validator.get_annotations(video_path,
-                                                  video_files,
-                                                  all_files)
+    video_files = video_validator.get_annotations(
+        video_path,
+        video_files,
+        all_files
+    )
     return video_files
 
 
 
 def process_video(source_path, output_path, file, annotation):
-    extraction_task = ExtractionTask(source_path,
-                                     output_path,
-                                     file,
-                                     annotation,
-                                     c.OVERWRITE)
-
+    extraction_task = ExtractionTask(
+        source_path, output_path,
+        file, annotation,
+        c.OVERWRITE
+    )
     extraction_task.read_annotation()
+
     extraction_task.create_output_dir()
+
+    extraction_task.show_info()
 
 
 
@@ -90,14 +123,15 @@ def create_dir(path, overwrite=False):
 
 
 
-def generate_dataset(video_path, dataset_path):
+def generate_dataset(video_path, output_path):
     assert os.path.isdir(video_path) != False, \
         f"Input path is not directory"
 
     supported_files = extract_video_from_path(video_path)
     for file, annotation in supported_files.items():
+        print(file, annotation)
         process_video(source_path=video_path,
-                      output_path=dataset_path,
+                      output_path=output_path,
                       file=file,
                       annotation=annotation)
 
@@ -105,7 +139,8 @@ def generate_dataset(video_path, dataset_path):
 
 
 if __name__ == '__main__':
-    generate_dataset(video_path=c.DATA_DIR_PATH,
-                     dataset_path=c.DATA_DIR_PATH)
+    generate_dataset(
+        video_path=c.DATA_DIR_PATH,
+        output_path=c.DATA_DIR_PATH)
 
     exit()
