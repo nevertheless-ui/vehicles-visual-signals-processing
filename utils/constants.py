@@ -22,7 +22,17 @@ TARGET_FPS = 30
 SUPPORTED_VIDEO_FORMATS = ('.ts')
 OVERWRITE = True                      # Output dataset directory
 
+# VIDEO_HANDLER
+TARGET_LABELS = ('Vehicle')
+TARGET_ATTRIBUTES = (
+    #'alarm',
+    'brake',
+    #'turn_left',
+    #'turn_right',
+)
+
 
 # ANNOTATION
 CVAT_STARTSWITH = 'task_'
 CVAT_ENDSWITH = ('cvat for video 1.1.zip')
+CVAT_LABELS = ('Vehicle')

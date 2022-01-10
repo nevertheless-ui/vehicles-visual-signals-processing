@@ -26,28 +26,16 @@ class ExtractionTask:
 
 
     def read_annotation(self):
-        self.annotation_meta, self.annotation_tracks = \
+        self.annotation_meta, \
+        self.annotation_tracks = \
             annotation_parser.get_annotation(self.annotation_path)
 
         self.info = {
             **annotation_parser.get_metadata(self.annotation_meta),
-            **annotation_parser.get_trackdata(self.annotation_tracks)
+            **annotation_parser.get_trackdata(self.annotation_tracks),
+            **annotation_parser.get_labels(self.annotation_meta,
+                                           c.TARGET_LABELS)
         }
-
-        print(self.info)
-
-
-
-    def show_info(self):
-        for attribute in [self.source_name, self.frames_size,
-                          self.tracks_number, self.tracks_size,
-                          self.video_width, self.video_height]:
-            print(attribute)
-        try:
-            print(self.annotation_tracks[0]['box'][0]['attribute'][0]['@name'])
-            print(self.annotation_tracks[0]['box'][0]['attribute'][0]['#text'])
-        except KeyError:
-            pass
 
 
     def create_output_dir(self):
@@ -69,12 +57,10 @@ def process_video(source_path, output_path, file, annotation):
     )
 
     extraction.read_annotation()
-    if c.ENABLE_DEBUG_LOGGER:
-        extraction.log_attributes()
-
     extraction.create_output_dir()
 
-
+    if c.ENABLE_DEBUG_LOGGER:
+        extraction.log_attributes()
 
 
 

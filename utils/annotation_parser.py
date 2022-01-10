@@ -56,5 +56,32 @@ def get_trackdata(tracks):
 
 
 
-def get_label_attributes(file, lable):
-    pass
+def get_labels(metadata, target_labels):
+    labeldata = {}
+
+    for label in metadata['task']['labels']:
+        lable_name = metadata['task']['labels'][label]['name']
+
+        if lable_name in target_labels:
+            attributes = get_attributes(
+                metadata['task']['labels'][label],
+                target_labels
+            )
+
+        labeldata[lable_name] = attributes
+
+    return {'Labels':labeldata}
+
+
+
+def get_attributes(label_data, target_labels):
+    attributes = []
+
+    try:
+        for attribute_name in label_data['attributes']:
+            for attribute in label_data['attributes'][attribute_name]:
+                attributes.append(attribute['name'])
+    except TypeError:
+        pass
+
+    return attributes
