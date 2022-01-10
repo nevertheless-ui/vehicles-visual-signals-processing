@@ -1,13 +1,14 @@
-# Main module of the project for vehicle signals recognition
-# Author: Filippenko Artyom, 2021
-# MISIS Master Degree Project
+"""
+Main Dataset Generator module of the project for vehicle signals recognition
+Author: Filippenko Artyom, 2021-2022
+MISIS Master Degree Project
+"""
 
 import os
-import shutil
 
 from utils import constants as c
+from utils import filesystem_tool as fs_tool
 from utils import logging_tool
-from utils import video_validator
 from utils import annotation_parser
 from utils import video_handler
 from utils import chunk_extractor
@@ -58,38 +59,13 @@ class ExtractionTask:
 
 
     def create_output_dir(self):
-        create_dir(path=self.output_path, overwrite=c.OVERWRITE)
+        fs_tool.create_dir(path=self.output_path, overwrite=c.OVERWRITE)
 
 
     def log_attributes(self):
         for attribute, value in self.__dict__.items():
             if attribute not in c.SKIP_ATTRIBUTE:
                 exec(f'{logger.debug(f"{attribute}: {value}")}')
-
-
-
-def extract_supported_filenames(filenames):
-    assert isinstance(filenames, list)
-    assert len(filenames) > 0
-    assert len(c.SUPPORTED_VIDEO_FORMATS) >= 1
-
-    for filename in filenames:
-        if filename.endswith(c.SUPPORTED_VIDEO_FORMATS):
-            yield filename
-
-
-def extract_video_from_path(video_path):
-    all_files = os.listdir(video_path)
-
-    video_files = \
-        [file for file in extract_supported_filenames(all_files)]
-
-    video_files = video_validator.get_annotations(
-        video_path,
-        video_files,
-        all_files
-    )
-    return video_files
 
 
 
@@ -105,36 +81,13 @@ def process_video(source_path, output_path, file, annotation):
     if c.ENABLE_DEBUG_LOGGER:
         extraction.log_attributes()
 
-    #extraction.show_info()
-
-
-
-def create_dir(path, overwrite=False):
-    try:
-        os.mkdir(path)
-
-    except FileExistsError:
-        if overwrite:
-            shutil.rmtree(path)
-            os.mkdir(path)
-
-        else:
-            dir_counter = 0
-            next_path = f"{path}_{str.zfill(str(dir_counter), 4)}"
-
-            while os.path.isdir(next_path):
-                dir_counter += 1
-                next_path = f"{path}_{str.zfill(str(dir_counter), 4)}"
-
-            os.mkdir(next_path)
-
 
 
 def generate_dataset(video_path, output_path):
     assert os.path.isdir(video_path) != False, \
         f"Input path is not directory"
 
-    supported_files = extract_video_from_path(video_path)
+    supported_files = fs_tool.extract_video_from_path(video_path)
 
     for file, annotation in supported_files.items():
         process_video(
@@ -142,7 +95,6 @@ def generate_dataset(video_path, output_path):
             output_path,
             file,
             annotation)
-
 
 
 
