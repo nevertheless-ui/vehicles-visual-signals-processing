@@ -14,7 +14,7 @@ VIDEO_CHUNK_SIZE = 2 # seconds
 SKIP_FRAME_NUM = 1
 TARGET_FPS = 30
 SUPPORTED_VIDEO_FORMATS = ('.ts')
+OVERWRITE = False
 
 CVAT_STARTSWITH = 'task_'
 CVAT_ENDSWITH = ('cvat for video 1.1.zip')
-git 
