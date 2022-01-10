@@ -4,12 +4,16 @@
 
 import os
 import shutil
+import logging
 
 from utils import constants as c
 from utils import video_validator
 from utils import annotation_parser
 from utils import video_handler
 from utils import chunk_extractor
+
+logging.basicConfig(filename='debug.log', encoding='utf-8', level=logging.DEBUG)
+
 
 
 class ExtractionTask:
@@ -89,16 +93,16 @@ def extract_video_from_path(video_path):
 
 
 def process_video(source_path, output_path, file, annotation):
-    extraction_task = ExtractionTask(
+    extraction = ExtractionTask(
         source_path, output_path,
         file, annotation,
         c.OVERWRITE
     )
-    extraction_task.read_annotation()
+    extraction.read_annotation()
 
-    extraction_task.create_output_dir()
+    extraction.create_output_dir()
 
-    extraction_task.show_info()
+    extraction.show_info()
 
 
 
