@@ -1,3 +1,8 @@
+"""
+Module for logging simplicity.
+Can be used same as vanilla logging module.
+"""
+
 import logging
 import secrets
 
