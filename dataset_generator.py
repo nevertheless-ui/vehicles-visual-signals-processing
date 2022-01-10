@@ -4,15 +4,13 @@
 
 import os
 import shutil
-import logging
 
 from utils import constants as c
+from utils import logging_tool
 from utils import video_validator
 from utils import annotation_parser
 from utils import video_handler
 from utils import chunk_extractor
-
-logging.basicConfig(filename='debug.log', encoding='utf-8', level=logging.DEBUG)
 
 
 
@@ -25,6 +23,11 @@ class ExtractionTask:
         self.output_path = os.path.join(export_path, f"{filename}_data")
         self.annotation_path = os.path.join(import_path, annotation)
         self.overwrite = overwrite
+
+        #logger.debug(f"Source path: {self.source_path}")
+        #logger.debug(f"Annotation: {self.annotation_path}")
+        #logger.debug(f"Output path: {self.output_path}")
+        #logger.debug(f"Overwrite: {self.overwrite}")
 
 
     def read_annotation(self):
@@ -47,7 +50,6 @@ class ExtractionTask:
             self.tracks_size[id] = len(track['box'])
 
 
-
     def show_info(self):
         for attribute in [self.source_name, self.frames_size,
                           self.tracks_number, self.tracks_size,
@@ -60,10 +62,14 @@ class ExtractionTask:
             pass
 
 
-
     def create_output_dir(self):
         create_dir(path=self.output_path, overwrite=c.OVERWRITE)
 
+
+    def log_attributes(self):
+        for attribute, value in self.__dict__.items():
+            if attribute not in c.SKIP_ATTRIBUTE:
+                exec(f'{logger.debug(f"{attribute}: {value}")}')
 
 
 
@@ -98,11 +104,13 @@ def process_video(source_path, output_path, file, annotation):
         file, annotation,
         c.OVERWRITE
     )
+
     extraction.read_annotation()
-
     extraction.create_output_dir()
+    if c.ENABLE_DEBUG_LOGGER:
+        extraction.log_attributes()
 
-    extraction.show_info()
+    #extraction.show_info()
 
 
 
@@ -132,17 +140,21 @@ def generate_dataset(video_path, output_path):
         f"Input path is not directory"
 
     supported_files = extract_video_from_path(video_path)
+
     for file, annotation in supported_files.items():
-        print(file, annotation)
-        process_video(source_path=video_path,
-                      output_path=output_path,
-                      file=file,
-                      annotation=annotation)
+        process_video(
+            video_path,
+            output_path,
+            file,
+            annotation)
 
 
 
 
 if __name__ == '__main__':
+    if c.ENABLE_DEBUG_LOGGER:
+        logger = logging_tool.get_logger()
+
     generate_dataset(
         video_path=c.DATA_DIR_PATH,
         output_path=c.DATA_DIR_PATH)
