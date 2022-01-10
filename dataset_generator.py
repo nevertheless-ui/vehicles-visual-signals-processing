@@ -7,11 +7,10 @@ MISIS Master Degree Project
 import os
 
 from utils import constants as c
-from utils import filesystem_tool as fs_tool
 from utils import logging_tool
+from utils import filesystem_tool as fs_tool
 from utils import annotation_parser
-from utils import video_handler
-from utils import chunk_extractor
+from utils import video_editor
 
 
 
@@ -27,23 +26,16 @@ class ExtractionTask:
 
 
     def read_annotation(self):
-        self.annotation_file = \
+        self.annotation_meta, self.annotation_tracks = \
             annotation_parser.get_annotation(self.annotation_path)
 
-        self.annotation_meta = self.annotation_file['annotations']['meta']
-        self.annotation_tracks = self.annotation_file['annotations']['track']
+        self.info = {
+            **annotation_parser.get_metadata(self.annotation_meta),
+            **annotation_parser.get_trackdata(self.annotation_tracks)
+        }
 
-        self.source_name = self.annotation_meta['source']
-        self.frames_size = self.annotation_meta['task']['size']
-        self.start_frame = self.annotation_meta['task']['start_frame']
-        self.stop_frame = self.annotation_meta['task']['stop_frame']
-        self.video_width, self.video_height = \
-            self.annotation_meta['task']['original_size'].values()
+        print(self.info)
 
-        self.tracks_number = len(self.annotation_tracks)
-        self.tracks_size = {}
-        for id, track in enumerate(self.annotation_tracks):
-            self.tracks_size[id] = len(track['box'])
 
 
     def show_info(self):
@@ -77,9 +69,12 @@ def process_video(source_path, output_path, file, annotation):
     )
 
     extraction.read_annotation()
-    extraction.create_output_dir()
     if c.ENABLE_DEBUG_LOGGER:
         extraction.log_attributes()
+
+    extraction.create_output_dir()
+
+
 
 
 
@@ -105,5 +100,3 @@ if __name__ == '__main__':
     generate_dataset(
         video_path=c.DATA_DIR_PATH,
         output_path=c.DATA_DIR_PATH)
-
-    exit()
