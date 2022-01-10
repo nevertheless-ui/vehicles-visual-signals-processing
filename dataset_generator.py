@@ -24,11 +24,6 @@ class ExtractionTask:
         self.annotation_path = os.path.join(import_path, annotation)
         self.overwrite = overwrite
 
-        #logger.debug(f"Source path: {self.source_path}")
-        #logger.debug(f"Annotation: {self.annotation_path}")
-        #logger.debug(f"Output path: {self.output_path}")
-        #logger.debug(f"Overwrite: {self.overwrite}")
-
 
     def read_annotation(self):
         self.annotation_file = \
