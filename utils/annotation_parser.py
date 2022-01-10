@@ -60,15 +60,15 @@ def get_labels(metadata, target_labels):
     labeldata = {}
 
     for label in metadata['task']['labels']:
-        lable_name = metadata['task']['labels'][label]['name']
+        label_name = metadata['task']['labels'][label]['name']
 
-        if lable_name in target_labels:
+        if label_name in target_labels:
             attributes = get_attributes(
                 metadata['task']['labels'][label],
                 target_labels
             )
 
-        labeldata[lable_name] = attributes
+        labeldata[label_name] = attributes
 
     return {'Labels':labeldata}
 

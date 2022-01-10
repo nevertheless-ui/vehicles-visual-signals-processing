@@ -85,4 +85,5 @@ if __name__ == '__main__':
 
     generate_dataset(
         video_path=c.DATA_DIR_PATH,
-        output_path=c.DATA_DIR_PATH)
+        output_path=c.DATA_DIR_PATH
+    )
