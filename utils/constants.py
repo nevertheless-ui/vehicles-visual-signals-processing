@@ -22,7 +22,7 @@ TARGET_FPS = 30
 SUPPORTED_VIDEO_FORMATS = ('.ts')
 OVERWRITE = True                      # Output dataset directory
 
-# VIDEO_HANDLER
+# VIDEO_EDITOR
 TARGET_LABELS = ('Vehicle')
 TARGET_ATTRIBUTES = (
     #'alarm',
@@ -30,6 +30,7 @@ TARGET_ATTRIBUTES = (
     #'turn_left',
     #'turn_right',
 )
+
 
 
 # ANNOTATION

@@ -64,8 +64,7 @@ def get_labels(metadata, target_labels):
 
         if label_name in target_labels:
             attributes = get_attributes(
-                metadata['task']['labels'][label],
-                target_labels
+                metadata['task']['labels'][label]
             )
 
         labeldata[label_name] = attributes
@@ -74,14 +73,13 @@ def get_labels(metadata, target_labels):
 
 
 
-def get_attributes(label_data, target_labels):
+def get_attributes(label_data):
     attributes = []
 
-    try:
+    if label_data['attributes'] is not None:
         for attribute_name in label_data['attributes']:
-            for attribute in label_data['attributes'][attribute_name]:
-                attributes.append(attribute['name'])
-    except TypeError:
-        pass
+            if len(label_data['attributes'][attribute_name]) > 0:
+                for attribute in label_data['attributes'][attribute_name]:
+                    attributes.append(attribute['name'])
 
     return attributes

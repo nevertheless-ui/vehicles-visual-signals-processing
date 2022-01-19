@@ -45,14 +45,16 @@ class ExtractionTask:
     def log_attributes(self):
         for attribute, value in self.__dict__.items():
             if attribute not in c.SKIP_ATTRIBUTE:
-                exec(f'{logger.debug(f"{attribute}: {value}")}')
+                logger.debug(f"{attribute}: {value}")
 
 
 
 def process_video(source_path, output_path, file, annotation):
     extraction = ExtractionTask(
-        source_path, output_path,
-        file, annotation,
+        source_path,
+        output_path,
+        file,
+        annotation,
         c.OVERWRITE
     )
 
