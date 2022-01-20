@@ -34,7 +34,7 @@ class ExtractionTask:
             **annotation_parser.get_metadata(self.annotation_meta),
             **annotation_parser.get_trackdata(self.annotation_tracks),
             **annotation_parser.get_labels(self.annotation_meta,
-                                           c.TARGET_LABELS)
+                                           c.TARGET_ATTRIBUTES.keys())
         }
 
 
@@ -50,6 +50,9 @@ class ExtractionTask:
 
 
 def process_video(source_path, output_path, file, annotation):
+    if c.ENABLE_DEBUG_LOGGER:
+        logger.debug(f"Processing... {file}")
+
     extraction = ExtractionTask(
         source_path,
         output_path,
@@ -60,6 +63,8 @@ def process_video(source_path, output_path, file, annotation):
 
     extraction.read_annotation()
     extraction.create_output_dir()
+
+    extraction.script = video_editor.create_script(extraction)
 
     if c.ENABLE_DEBUG_LOGGER:
         extraction.log_attributes()
@@ -77,7 +82,8 @@ def generate_dataset(video_path, output_path):
             video_path,
             output_path,
             file,
-            annotation)
+            annotation,
+        )
 
 
 

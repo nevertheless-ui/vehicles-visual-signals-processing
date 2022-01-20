@@ -15,22 +15,25 @@ SKIP_ATTRIBUTE = ('annotation_file',
 
 # DATA
 DATA_DIR_PATH = 'data\\raw_data'
-EXTRACTOR_RESOLUTION = (500, 500)     # pixels
+EXTRACTOR_RESOLUTION = (500, 500) # pixels
 VIDEO_CHUNK_SIZE = 2 # seconds
 SKIP_FRAME_NUM = 1
 TARGET_FPS = 30
 SUPPORTED_VIDEO_FORMATS = ('.ts')
-OVERWRITE = True                      # Output dataset directory
+OVERWRITE = True                  # Output dataset directory
 
 # VIDEO_EDITOR
-TARGET_LABELS = ('Vehicle')
-TARGET_ATTRIBUTES = (
-    #'alarm',
-    'brake',
-    #'turn_left',
-    #'turn_right',
-)
-
+TARGET_ATTRIBUTES = {
+    'Vehicle':(
+        #'alarm',
+        'brake',
+        #'turn_left',
+        #'turn_right',
+    )
+}
+BASE_CLASS = 'idle'
+CLASS_OVERLAY = True  # Same frames can be used for different classes
+FRAME_STEP = 7
 
 
 # ANNOTATION
