@@ -67,7 +67,7 @@ def get_labels(metadata, target_labels):
                 metadata['task']['labels'][label]
             )
 
-        labeldata[label_name] = attributes
+        labeldata[label_name] = tuple(attributes)
 
     return {'Labels':labeldata}
 

@@ -64,7 +64,7 @@ def process_video(source_path, output_path, file, annotation):
     extraction.read_annotation()
     extraction.create_output_dir()
 
-    extraction.script = video_editor.create_script(extraction)
+    extraction.script = video_editor.get_script(extraction)
 
     if c.ENABLE_DEBUG_LOGGER:
         extraction.log_attributes()

@@ -3,13 +3,33 @@ Module for Video Extraction.
 Contains class VideoDirector which creates ExtractionScript
 """
 
-import os
-
 from utils import constants as c
 
 
 
-def create_script(extraction):
+class TrackAnalyzer:
+    def __init__(self, track, overlay_policy):
+        self.track = track
+        self.overlay_policy = overlay_policy
+        self.is_depleted = False
+
+        self.__load_track()
+
+
+    def __load_track(self):
+        #self.track_frames = (t for t in self.track[''])
+        print(self.track['frame'])
+        self.is_depleted = True
+        pass
+
+
+
+    def search_sequence(self):
+        pass
+
+
+
+def get_script(extraction):
     extraction_status = \
         extraction.info is not None and \
         extraction.annotation_tracks is not None
@@ -18,8 +38,13 @@ def create_script(extraction):
     script = {}
 
     script['source_name'] = extraction.info['source_name']
+
     script['script_settings'] = read_script_settings()
-    script['chunks'] = generate_script_chunks(extraction.annotation_tracks)
+
+    script['chunks'] = get_script_chunks(
+        tracks=extraction.annotation_tracks,
+        overlay_policy=script['script_settings']['classes_overlay']
+    )
 
     return script
 
@@ -40,12 +65,43 @@ def read_script_settings():
 
 
 
-def generate_script_chunks(tracks):
+def get_script_chunks(tracks, overlay_policy):
     chunks = []
 
-    chunks.append({'track':0, 'class':'idle', 'frames_seq':[1,2,3,4,5,6,7]})
+    for track in tracks:
+        analyst = TrackAnalyzer(
+            track=track,
+            overlay_policy=overlay_policy
+        )
+
+        while not analyst.is_depleted:
+            analyst.search_sequence()
+
+    test_chunk = {
+        'track':0,
+        'lable':'Vehicle',
+        'class':'idle',
+        'sequence':tuple({
+            'frame':1,
+            'box':{
+                'A':(100,100),
+                'B':(150,150),
+            },
+            'attributes':{
+                'alarm':False,
+                'brake':False,
+                'turn_left':False,
+                'turn_right':False,
+            }
+        })
+    }
+
+    chunks.append(test_chunk)
 
     return tuple(chunks)
+
+
+
 
 
 def write_video(file, script):
