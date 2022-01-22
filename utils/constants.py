@@ -33,7 +33,7 @@ TARGET_ATTRIBUTES = {
 }
 BASE_CLASS = 'idle'
 CLASS_OVERLAY = True  # Same frames can be used for different classes
-FRAME_STEP = 7
+CHUNK_SIZE = 15 # frames
 
 
 # ANNOTATION
