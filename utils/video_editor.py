@@ -3,6 +3,7 @@ Module for Video Extraction.
 Contains class VideoDirector which creates ExtractionScript
 """
 
+from msilib import sequence
 from utils import constants as c
 
 
@@ -13,19 +14,37 @@ class TrackAnalyzer:
         self.overlay_policy = overlay_policy
         self.is_depleted = False
 
+        self.seqences = []
+        self.stopped_frames = set()
+
         self.__load_track()
 
 
     def __load_track(self):
         #self.track_frames = (t for t in self.track[''])
-        print(self.track['frame'])
+        self.track_id = self.track['@id']
+        self.track_lable = self.track['@label']
+
+        self.track_frames = {}
+
+
+    def __find_sequence(self):
+        seqence_class = 'idle'
+        sequence = tuple([x for x in range(15)])
+
+        new_sequence = {
+            'class':seqence_class,
+            'sequence':sequence
+        }
+
+        return new_sequence
+
+
+    def add_sequence(self):
+        self.seqences.append(self.__find_sequence())
+
+        self.sequence_number = len(self.seqences)
         self.is_depleted = True
-        pass
-
-
-
-    def search_sequence(self):
-        pass
 
 
 
@@ -75,25 +94,28 @@ def get_script_chunks(tracks, overlay_policy):
         )
 
         while not analyst.is_depleted:
-            analyst.search_sequence()
+            analyst.add_sequence()
+
+        for sequence in analyst.seqences:
+            new_chunk = {
+                'track':analyst.track_id,
+                'lable':analyst.track_lable,
+                'class':sequence['class'],
+                'sequence':sequence['sequence']
+            }
+            chunks.append(new_chunk)
 
     test_chunk = {
         'track':0,
         'lable':'Vehicle',
         'class':'idle',
-        'sequence':tuple({
+        'sequence':{
             'frame':1,
             'box':{
                 'A':(100,100),
                 'B':(150,150),
-            },
-            'attributes':{
-                'alarm':False,
-                'brake':False,
-                'turn_left':False,
-                'turn_right':False,
             }
-        })
+        }
     }
 
     chunks.append(test_chunk)
