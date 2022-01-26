@@ -48,8 +48,9 @@ Extractor description:
 - PowerShell: .\.venv\Scripts\Activate.ps1
 - Linux Terminal: source .venv/bin/activate
 
-3. Installing requirements:
+3. Installation requirements:
 - pip3 install -r requirements.txt
 
-4. Installing PyTorch with CUDA11 based on https://pytorch.org/get-started/locally/
-- pip3 install torch==1.10.0+cu113 torchvision==0.11.1+cu113 torchaudio===0.10.0+cu113 -f https://download.pytorch.org/whl/cu113/torch_stable.html
+4. [Installation CUDA for Windows](https://docs.nvidia.com/cuda/cuda-installation-guide-microsoft-windows/index.html)
+
+5. [Installation PyTorch docs](https://pytorch.org/get-started/locally/)
