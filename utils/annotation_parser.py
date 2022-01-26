@@ -69,7 +69,7 @@ def get_labels(metadata, target_labels):
 
         labeldata[label_name] = tuple(attributes)
 
-    return {'Labels':labeldata}
+    return {'labels':labeldata}
 
 
 

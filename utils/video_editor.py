@@ -4,24 +4,32 @@ Contains class TrackAnalyzer which generates script for video chunks extractions
 Each chunk contains data of source, lable, class and attributes
 """
 
+from collections import OrderedDict
 from utils import constants as c
 
 
 
 class TrackAnalyzer:
-    def __init__(self, track, settings):
+    def __init__(self, track, settings, labels):
         self.track_data = track
         self.overlay_policy = c.CLASS_OVERLAY
         self.chunk_size = c.CHUNK_SIZE
         self.is_depleted = False
         self.settings = settings
+        self.labels = labels
 
         self.sequences = []
         self.stopped_frames = set()
-        self.markers = {}
+        self.markers = OrderedDict()
 
         self.__load_track()
-        self.__get_attribute_markers()
+
+        if self.target_attributes:
+            self.__get_attribute_markers()
+
+        #for key, val in self.markers.items():
+            #print(key, val)
+
 
 
     def __len__(self):
@@ -31,11 +39,12 @@ class TrackAnalyzer:
     def __load_track(self):
         self.track_id = self.track_data['@id']
         self.track_label = self.track_data['@label']
+        self.attributes = self.labels[self.track_label]
 
         self.target_attributes = \
             self.settings['target_attributes'][self.track_label]
 
-        self.track_frames = {}
+        self.track_frames = OrderedDict()
 
         for box in self.track_data['box']:
             attributes = {}
@@ -54,22 +63,46 @@ class TrackAnalyzer:
 
 
     def __get_attribute_markers(self):
-        previous_attribute_state = {}
-        for attribute in self.target_attributes:
-            self.markers[attribute] = []
-            previous_attribute_state[attribute] = None
+        previous_attribute_state = OrderedDict()
 
-        for frame_number, metadata in self.track_frames.items():
-            self.__evaluate_frame(frame_number, metadata,
-                                  previous_attribute_state)
+        for attribute in self.attributes:
+            if attribute in self.target_attributes:
+                self.markers[attribute] = OrderedDict()
+                previous_attribute_state[attribute] = None
 
-            for attribute, state in metadata['attributes'].items():
-                previous_attribute_state[attribute] = state
+        if self.markers:
+            for frame_number, metadata in self.track_frames.items():
+                self.__evaluate_frame(frame_number, metadata,
+                                    previous_attribute_state)
+
+                for attribute, state in metadata['attributes'].items():
+                    previous_attribute_state[attribute] = state
+
+        else:
+            pass
 
 
-    @staticmethod
-    def __evaluate_frame(frame_number, metadata, previous_attribute_state):
-        pass
+    def __evaluate_frame(self, frame_number, metadata,
+                         previous_attribute_state):
+        for attribute, state in metadata['attributes'].items():
+
+            if attribute in self.target_attributes:
+
+                if previous_attribute_state[attribute] == state:
+                    continue
+
+                elif previous_attribute_state[attribute] != state:
+
+                    if previous_attribute_state[attribute] is not None:
+
+                        # WARNING: Default attribute's type in annotation is STRING. Be advised!
+                        if previous_attribute_state[attribute] == 'false':
+                            self.markers[attribute][frame_number] = 'start_frame'
+                        if previous_attribute_state[attribute] == 'true':
+                            self.markers[attribute][frame_number] = 'end_frame'
+
+                    else:
+                        continue
 
 
     def __generate_next_sequence(self):
@@ -100,7 +133,8 @@ def get_script(extraction):
     script['script_settings'] = read_script_settings()
     script['chunks'] = get_chunks(
         tracks=extraction.annotation_tracks,
-        settings=script['script_settings']
+        settings=script['script_settings'],
+        labels=extraction.info['labels']
     )
 
     return script
@@ -121,11 +155,11 @@ def read_script_settings():
 
 
 
-def get_chunks(tracks, settings):
+def get_chunks(tracks, settings, labels):
     chunks = []
 
     for track in tracks:
-        analyst = TrackAnalyzer(track, settings)
+        analyst = TrackAnalyzer(track, settings, labels)
 
         while not analyst.is_depleted:
             analyst.add_sequence()
