@@ -32,8 +32,10 @@ TARGET_ATTRIBUTES = {
     )
 }
 BASE_CLASS = 'idle'
+CHUNK_SIZE = 5 # frames
+FRAME_STEP = 5 # frames shift
 CLASS_OVERLAY = True  # Same frames can be used for different classes
-CHUNK_SIZE = 15 # frames
+CLASS_BALANCED = True # Balance classes?
 
 
 # ANNOTATION

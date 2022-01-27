@@ -11,6 +11,7 @@ from utils import logging_tool
 from utils import filesystem_tool as fs_tool
 from utils import annotation_parser
 from utils import video_editor
+from utils import video_writer
 
 
 
@@ -42,10 +43,43 @@ class ExtractionTask:
         fs_tool.create_dir(path=self.output_path, overwrite=c.OVERWRITE)
 
 
+    def write_chunks(self):
+        assert self.script, "No script in extraction!"
+
+        video_writer.write_chunks(
+            output=self.output_path,
+            script=self.script
+        )
+
+
     def log_attributes(self):
         for attribute, value in self.__dict__.items():
             if attribute not in c.SKIP_ATTRIBUTE:
-                logger.debug(f"{attribute}: {value}")
+
+                # Makes logs shorter. Script contains all chunks data.
+                if attribute in ('script', 'info'):
+
+                    for info_attribute in value.keys():
+                        if info_attribute == 'chunks':
+                            log_msg = \
+                                f"{attribute}: {info_attribute}: " \
+                                f"{len(value[info_attribute])} chunks total"
+                            logger.debug(log_msg)
+
+                            for chunk in value[info_attribute]:
+                                log_msg = \
+                                    f"{attribute}: {info_attribute}: {chunk.keys()}"
+                                logger.debug(log_msg)
+
+                        else:
+                            log_msg = \
+                                f"{attribute}: {info_attribute}: " \
+                                f"{value[info_attribute]}"
+                            logger.debug(log_msg)
+                    pass
+
+                else:
+                    logger.debug(f"{attribute}: {value}")
 
 
 
@@ -68,6 +102,11 @@ def process_video(source_path, output_path, file, annotation):
 
     if c.ENABLE_DEBUG_LOGGER:
         extraction.log_attributes()
+        logger.debug(f"Writing chunks to: {extraction.output_path}")
+
+    extraction.write_chunks()
+
+
 
 
 
