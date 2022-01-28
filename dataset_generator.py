@@ -53,23 +53,19 @@ class ExtractionTask:
 
 
     def log_attributes(self):
+        long_attributes = ('script', 'info')
+
         for attribute, value in self.__dict__.items():
             if attribute not in c.SKIP_ATTRIBUTE:
 
                 # Makes logs shorter. Script contains all chunks data.
-                if attribute in ('script', 'info'):
-
+                if attribute in long_attributes:
                     for info_attribute in value.keys():
                         if info_attribute == 'chunks':
                             log_msg = \
                                 f"{attribute}: {info_attribute}: " \
                                 f"{len(value[info_attribute])} chunks total"
                             logger.debug(log_msg)
-
-                            for chunk in value[info_attribute]:
-                                log_msg = \
-                                    f"{attribute}: {info_attribute}: {chunk.keys()}"
-                                logger.debug(log_msg)
 
                         else:
                             log_msg = \
@@ -83,9 +79,28 @@ class ExtractionTask:
 
 
 
-def process_video(source_path, output_path, file, annotation):
+def supported_labels_check(extraction):
+    extraction_status = False
+    target_labels = c.TARGET_ATTRIBUTES.keys()
+    extraction_labels = extraction.info['labels'].keys()
+
+    if any(label in extraction_labels for label in target_labels):
+
+        for label, attributes in c.TARGET_ATTRIBUTES.items():
+            if label in extraction_labels:
+                extration_label_attributes = extraction.info['labels'][label]
+
+                if any(i in extration_label_attributes for i in attributes):
+                    extraction_status = True
+                    break
+
+    return extraction_status
+
+
+
+def analyze_video(source_path, output_path, file, annotation):
     if c.ENABLE_DEBUG_LOGGER:
-        logger.debug(f"Processing... {file}")
+        logger.debug(f"Analyzing... {file}")
 
     extraction = ExtractionTask(
         source_path,
@@ -94,19 +109,10 @@ def process_video(source_path, output_path, file, annotation):
         annotation,
         c.OVERWRITE
     )
-
     extraction.read_annotation()
-    extraction.create_output_dir()
+    extraction.is_suitable = supported_labels_check(extraction)
 
-    extraction.script = video_editor.get_script(extraction)
-
-    if c.ENABLE_DEBUG_LOGGER:
-        extraction.log_attributes()
-        logger.debug(f"Writing chunks to: {extraction.output_path}")
-
-    extraction.write_chunks()
-
-
+    return extraction
 
 
 
@@ -117,12 +123,21 @@ def generate_dataset(video_path, output_path):
     supported_files = fs_tool.extract_video_from_path(video_path)
 
     for file, annotation in supported_files.items():
-        process_video(
-            video_path,
-            output_path,
-            file,
-            annotation,
-        )
+        extraction = analyze_video(video_path, output_path, file, annotation)
+
+        if extraction.is_suitable:
+            extraction.create_output_dir()
+            extraction.script = video_editor.get_script(extraction)
+
+            if c.ENABLE_DEBUG_LOGGER:
+                extraction.log_attributes()
+                logger.debug(f"Writing chunks to: {extraction.output_path}")
+
+            extraction.write_chunks()
+
+        else:
+            if c.ENABLE_DEBUG_LOGGER:
+                logger.debug("No supported labels for extraction")
 
 
 
