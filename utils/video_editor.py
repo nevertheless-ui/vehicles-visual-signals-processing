@@ -11,6 +11,7 @@ from utils import constants as c
 
 class TrackAnalyzer:
     def __init__(self, track, settings, labels):
+        print("***")
         self.track_data = track
         self.overlay_policy = c.CLASS_OVERLAY
         self.chunk_size = c.CHUNK_SIZE
@@ -21,17 +22,16 @@ class TrackAnalyzer:
         self.min_track_size = self.__get_slice_size_for_chunk()
 
         self.sequences = []
-        self.used_frames = set()
         self.markers = OrderedDict()
 
         self.__load_track()
 
         if self.target_attributes:
             self.__get_attribute_markers()
+        self.__get_base_markers()
 
-        #for key, val in self.markers.items():
-            #print(key, val)
-
+        for key, val in self.markers.items():
+            print(key, val)
 
 
     def __len__(self):
@@ -55,7 +55,7 @@ class TrackAnalyzer:
 
         for box in self.track_data['box']:
             attributes = OrderedDict()
-            frame_number = box['@frame']
+            frame_number = int(box['@frame'])
             coordinates = self.__get_coordinates(box)
 
             if 'attribute' in box.keys():
@@ -69,15 +69,15 @@ class TrackAnalyzer:
 
     @staticmethod
     def __get_coordinates(box):
-        def convert_coordinate(coordinate):
+        def str_to_int(coordinate):
             assert isinstance(coordinate, str)
             return int(float(coordinate))
 
         a_x, a_y, b_x, b_y = (
-            convert_coordinate(box['@xtl']),
-            convert_coordinate(box['@ytl']),
-            convert_coordinate(box['@xbr']),
-            convert_coordinate(box['@ybr']),
+            str_to_int(box['@xtl']),
+            str_to_int(box['@ytl']),
+            str_to_int(box['@xbr']),
+            str_to_int(box['@ybr']),
         )
 
         coordinates = {
@@ -108,6 +108,23 @@ class TrackAnalyzer:
 
         else:
             pass
+
+
+    def __get_base_markers(self):
+        markers = OrderedDict()
+        print(self.track_frames.keys())
+
+        if not any(len(markers) > 0 for markers in self.markers.values()):
+            track_frames = list(self.track_frames.keys())
+            start_frame_index, end_frame_index = \
+                track_frames[0], track_frames[-1]
+
+            markers[start_frame_index] = 'start_frame'
+            markers[end_frame_index] = 'end_frame'
+
+        self.markers[c.BASE_CLASS] = markers
+        #
+
 
 
     def __evaluate_frame(self, frame_number, metadata,
@@ -141,13 +158,21 @@ class TrackAnalyzer:
             pass
 
 
-    def generate_sequences(self):
+    def generate_sequences(self, add_reversed):
         if len(self.track_frames) < self.min_track_size:
             self.is_depleted = True
 
         else:
+            print(self.markers.items())
+            for attrib, frames in self.markers.items():
+                for frame, frame_type in frames.items():
+                    if frame_type=='start_frame':
+                        self.__get_target_class(frame, attrib, add_reversed)
+
+            #while not self.is_depleted:
+
             sequence_class = c.BASE_CLASS
-            sequence_frames = {}
+            sequence_frames = OrderedDict()
             for x in [x for x in range(self.min_track_size)]:
                 sequence_frames[str(x)] = {
                 'tl':(1, 1),
@@ -163,13 +188,38 @@ class TrackAnalyzer:
             self.is_depleted = True
 
 
-    def __get_base_class(self):
+    def __get_target_class(self, frame, attrib, add_reversed):
+        # calculate sequence
+        # test for availibility
+        # check_status
+
+
+        #self.track_frames[frame]
+
+        #new_sequence = (sequence_class, sequence_frames)
+        #new_sequence = tuple(new_sequence)
+
+        #self.sequences.append(new_sequence)
         pass
 
 
-    def __get_target_class(self):
+    def __get_base_class(self, frame, attrib, add_reversed):
         pass
 
+
+    @staticmethod
+    def __get_chunk_indexes(frame): # calculate sequence
+        pass
+
+
+    @staticmethod
+    def __test_frame_availibility(frames): # test for availibility
+        pass
+
+
+    @staticmethod
+    def __test_frame_status_integrity(frames): # test for availibility
+        pass
 
 
 def get_chunks(tracks, settings, labels):
@@ -177,7 +227,7 @@ def get_chunks(tracks, settings, labels):
 
     for track in tracks:
         analyst = TrackAnalyzer(track, settings, labels)
-        analyst.generate_sequences()
+        analyst.generate_sequences(add_reversed=c.ADD_REVERSED)
 
         for sequence_class, sequence_frames in analyst.sequences:
             new_chunk = {
