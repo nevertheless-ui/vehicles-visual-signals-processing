@@ -54,37 +54,39 @@ class TrackAnalyzer:
         self.track_frames = OrderedDict()
 
         for box in self.track_data['box']:
-            attributes = OrderedDict()
-            frame_number = int(box['@frame'])
-            coordinates = self.__get_coordinates(box)
+            if box['@outside'] != '1':
+                attributes = OrderedDict()
+                frame_number = int(box['@frame'])
+                coordinates = self.__get_coordinates(box)
 
-            if 'attribute' in box.keys():
-                attributes = {x['@name']:x['#text'] for x in box['attribute']}
+                if 'attribute' in box.keys():
+                    attributes = {x['@name']:x['#text']
+                                  for x in box['attribute']}
 
-            self.track_frames[frame_number] = {
-                'coordinates':coordinates,
-                'attributes':attributes,
-            }
+                self.track_frames[frame_number] = {
+                    'coordinates':coordinates,
+                    'attributes':attributes,
+                }
 
 
     @staticmethod
     def __get_coordinates(box):
-        def str_to_int(coordinate):
-            assert isinstance(coordinate, str)
-            return int(float(coordinate))
 
-        a_x, a_y, b_x, b_y = (
-            str_to_int(box['@xtl']),
-            str_to_int(box['@ytl']),
-            str_to_int(box['@xbr']),
-            str_to_int(box['@ybr']),
+        def convert_str_to_int(*args):
+            assert len(args) == 4
+
+            converted_coordinates = \
+                tuple(int(float(coordinate)) for coordinate in args)
+
+            return converted_coordinates
+
+        a_x, a_y, b_x, b_y = convert_str_to_int(
+            box['@xtl'], box['@ytl'], box['@xbr'], box['@ybr']
         )
 
         coordinates = {
-            'tl':(a_x, a_y),
-            'tr':(b_x, a_y),
-            'bl':(a_x, b_y),
-            'br':(b_x, b_y),
+            'tl':(a_x, a_y), 'tr':(b_x, a_y),
+            'bl':(a_x, b_y), 'br':(b_x, b_y),
         }
 
         return coordinates
@@ -112,19 +114,65 @@ class TrackAnalyzer:
 
     def __get_base_markers(self):
         markers = OrderedDict()
-        print(self.track_frames.keys())
+        print("Get base", self.track_frames.keys())
 
+        track_frames = list(self.track_frames.keys())
         if not any(len(markers) > 0 for markers in self.markers.values()):
-            track_frames = list(self.track_frames.keys())
-            start_frame_index, end_frame_index = \
-                track_frames[0], track_frames[-1]
+            self.__add_base_markers_for_empty_track(markers, track_frames)
 
-            markers[start_frame_index] = 'start_frame'
-            markers[end_frame_index] = 'end_frame'
+        else:
+            self.__add_base_markers_for_complex_track(markers, track_frames)
 
         self.markers[c.BASE_CLASS] = markers
-        #
 
+
+    def __add_base_markers_for_empty_track(self, markers, track_frames):
+        if track_frames:
+            start_frame_idx, end_frame_idx = \
+                track_frames[0], track_frames[-1]
+
+            markers[start_frame_idx] = 'start_frame'
+            markers[end_frame_idx] = 'end_frame'
+
+
+    def __add_base_markers_for_complex_track(self, markers, track_frames):
+        non_empty_classes = set(
+            class_label for class_label, records in self.markers.items() \
+            if len(records) > 0
+        )
+        self.__drop_frames_with_signals(track_frames, non_empty_classes)
+
+        track_frames.sort()
+
+        if track_frames:
+            self.__mark_base_frames(markers, track_frames)
+
+
+    def __drop_frames_with_signals(self, track_frames, non_empty_classes):
+        for frame_num, metadata in self.track_frames.items():
+            if any(tuple(value=='true' for attrib, value
+                         in metadata['attributes'].items()
+                         if attrib in non_empty_classes)
+                ):
+                idx_to_pop = track_frames.index(frame_num)
+                track_frames.pop(idx_to_pop)
+
+
+    def __mark_base_frames(self, markers, track_frames):
+        start_frame_idx = track_frames[0]
+        end_frame_idx = track_frames[-1]
+
+        for num, frame_idx in enumerate(track_frames):
+            if track_frames[num] == start_frame_idx:
+                markers[start_frame_idx] = 'start_frame'
+
+            elif track_frames[num] == end_frame_idx:
+                markers[end_frame_idx] = 'end_frame'
+
+            elif frame_idx != (track_frames[num - 1] + 1):
+                previouse_frame_idx = track_frames[num - 1]
+                markers[previouse_frame_idx] = 'end_frame'
+                markers[frame_idx] = 'start_frame'
 
 
     def __evaluate_frame(self, frame_number, metadata,
@@ -152,7 +200,7 @@ class TrackAnalyzer:
                 self.markers[attribute][frame_number] = 'start_frame'
 
             elif previous_state == 'true':
-                self.markers[attribute][frame_number] = 'end_frame'
+                self.markers[attribute][frame_number - 1] = 'end_frame'
 
         else:
             pass
@@ -228,6 +276,8 @@ def get_chunks(tracks, settings, labels):
     for track in tracks:
         analyst = TrackAnalyzer(track, settings, labels)
         analyst.generate_sequences(add_reversed=c.ADD_REVERSED)
+
+        print(analyst.track_id)
 
         for sequence_class, sequence_frames in analyst.sequences:
             new_chunk = {
