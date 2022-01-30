@@ -5,14 +5,16 @@ from utils import constants as c
 
 
 class TrackAnalyzer:
-    def __init__(self, track, settings, labels):
+    def __init__(self, track, settings, labels, frames_total):
         self.track_data = track
         self.overlay_policy = c.CLASS_OVERLAY
         self.chunk_size = c.CHUNK_SIZE
         self.is_depleted = False
         self.settings = settings
         self.labels = labels
+
         self.last_frame = 0
+        self.first_frame = int(frames_total)
 
         self.min_track_size = self.__get_slice_size_for_chunk()
 
@@ -52,6 +54,9 @@ class TrackAnalyzer:
 
                 if frame_number > self.last_frame:
                     self.last_frame = frame_number
+
+                if frame_number < self.first_frame:
+                    self.first_frame = frame_number
 
                 if 'attribute' in box.keys():
                     attributes = {x['@name']:x['#text']
@@ -194,8 +199,14 @@ class TrackAnalyzer:
 
 
     def __get_target_class(self, frame, attrib, add_reversed):
-        # calculate sequence
-        # test for availibility
+        chunk_status = 'drop'
+
+        chunk_indexes = self.__get_chunk_indexes(frame)
+        indexes_are_avalible = self.__test_frame_availibility(chunk_indexes)
+
+        if indexes_are_avalible:
+            chunk_status = self.__test_frame_status_integrity(chunk_indexes)
+
         # check_status
 
 
@@ -209,8 +220,21 @@ class TrackAnalyzer:
 
 
     @staticmethod
-    def __get_chunk_indexes(frame): # calculate sequence
-        pass
+    def __get_chunk_indexes(frame) -> list:
+        def get_shifts(frame, steps):
+            left, right = [], []
+            for i in range(1, steps + 1):
+                left.append(frame + (c.FRAME_STEP * -i))
+            for i in range(1, steps + 1):
+                right.append(frame + (c.FRAME_STEP * i))
+            return sorted(left), sorted(right)
+
+        added_size = c.CHUNK_SIZE - 1
+        steps = int(added_size / 2)
+        left, right = get_shifts(frame, steps)
+        frames = left + [frame] + right
+
+        return frames
 
 
     @staticmethod

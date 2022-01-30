@@ -9,11 +9,11 @@ from utils.track_analyzer import TrackAnalyzer
 
 
 
-def get_chunks(tracks, settings, labels):
+def get_chunks(tracks, settings, labels, frames_total):
     chunks = []
 
     for track in tracks:
-        analyst = TrackAnalyzer(track, settings, labels)
+        analyst = TrackAnalyzer(track, settings, labels, frames_total)
         analyst.generate_sequences(add_reversed=c.ADD_REVERSED)
 
         for sequence_class, sequence_frames in analyst.sequences:
@@ -55,7 +55,8 @@ def get_script(extraction):
     script['chunks'] = get_chunks(
         tracks=extraction.annotation_tracks,
         settings=script['script_settings'],
-        labels=extraction.info['labels']
+        labels=extraction.info['labels'],
+        frames_total=extraction.info['frames_size']
     )
 
     return script
