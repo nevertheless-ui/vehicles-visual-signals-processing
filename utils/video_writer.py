@@ -6,15 +6,20 @@ import os
 import cv2
 
 from utils import constants as c
+from utils import logging_tool
 from utils import filesystem_tool as fs
 
 
 
 class ChunkWriter:
-    def __init__(self, source, output, script):
+    def __init__(self, source, output, script, logger):
         self.source_path = source
         self.output_path = output
         self.script = script
+        self.logger = logger
+
+        self.fps = c.CHUNK_SIZE
+        self.resolution = c.EXTRACTOR_RESOLUTION
 
         self.source_name = self.script['source_name']
         self.chunks = self.script['chunks']
@@ -26,6 +31,7 @@ class ChunkWriter:
     def __read_video(self):
         assert os.path.isfile(self.source_path), \
             f'{self.source_path} is missing'
+
         self.capture = cv2.VideoCapture(self.source_path)
         self.codec = cv2.VideoWriter_fourcc('M', 'J', 'P', 'G')
 
@@ -42,7 +48,10 @@ class ChunkWriter:
         for num, chunk in enumerate(self.chunks):
             chunk_path = self.__get_chunk_path(num, chunk)
 
-            #self.output =
+            output = self.__get_output()
+
+            if c.ENABLE_DEBUG_LOGGER:
+                self.logger.debug(f"Write: {chunk_path}")
 
         #iterate over chunks
         ## 1. create output
@@ -54,17 +63,27 @@ class ChunkWriter:
 
     def __get_chunk_path(self, num, chunk):
         class_path = os.path.join(self.output_path, chunk['class'])
-        pass
+
+        file = self.source_name
+        label_name = chunk['label']
+        class_name = chunk['class']
+        track_num = str.zfill(str(chunk['track']), 4)
+        chunk_num = str.zfill(str(num), 4)
+
+        chunk_name = \
+            f"{file}_{label_name}_{class_name}_tr{track_num}_seq{chunk_num}"
+
+        chunk_path = os.path.join(class_path, f"{chunk_name}.mjpg")
+
+        return chunk_path
 
 
-
-    def get_(f_name, f_format, f_name_suffix, fps, codec, resolution):
-        output_file_name = (f'{f_name}_{f_name_suffix}.{f_format}')
+    def __get_output(self, chunk_path):
         video_output = cv2.VideoWriter(
-            output_file_name,
-            codec,
-            fps,
-            resolution,
+            chunk_path,
+            codec=self.codec,
+            fps=self.fps,
+            resolution=self.resolution,
         )
         return video_output
 
@@ -94,7 +113,12 @@ class ChunkWriter:
 
 
 
-def start_writing_video_chunks(source, output, script):
-    writer = ChunkWriter(source, output, script)
+def start_writing_video_chunks(source, output, script, logger):
+    if c.ENABLE_DEBUG_LOGGER:
+        log_msg = f"Writing to '{output}': " \
+                  f"{len(script['chunks'])} chunks in file"
+        logger.debug(log_msg)
 
-    print(f"Writing to {output}: {len(script['chunks'])} chunks in file")
+    writer = ChunkWriter(source, output, script, logger)
+
+    writer.write_chunks()

@@ -127,7 +127,8 @@ def generate_dataset(video_path, output_path):
             video_writer.start_writing_video_chunks(
                 source=extraction.source_path,
                 output=extraction.output_path,
-                script=extraction.script
+                script=extraction.script,
+                logger=logger
             )
 
         else:
