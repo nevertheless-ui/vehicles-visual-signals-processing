@@ -23,16 +23,16 @@ class TrackAnalyzer:
         self.__load_track()
         self.__get_markers()
 
-        #for key, val in self.markers.items():
-            #print(key, val)
+        for key, val in self.markers.items():
+            print(key, val)
 
 
-    def __len__(self):
+    def __len__(self) -> int:
          return len(self.sequences)
 
 
     @staticmethod
-    def __get_slice_size_for_chunk():
+    def __get_slice_size_for_chunk() -> int:
         return ((c.CHUNK_SIZE - 1) * c.FRAME_STEP) + 1
 
 
@@ -68,10 +68,8 @@ class TrackAnalyzer:
                 }
 
 
-
-
     @staticmethod
-    def __get_coordinates(box):
+    def __get_coordinates(box) -> dict:
 
         def convert_str_to_int(*args):
             assert len(args) == 4
@@ -142,12 +140,13 @@ class TrackAnalyzer:
                     continue
 
                 elif (previous_state != state) or is_last_frame:
-                    self.__mark_frame(
-                        attrib,
-                        frame_number,
-                        state,
-                        previous_state
-                    )
+                        print(attrib, frame_number, (previous_state, '>', state))
+                        self.__mark_frame(
+                            attrib,
+                            frame_number,
+                            state,
+                            previous_state
+                        )
 
 
     def __mark_frame(self, attrib, frame_number, state, previous_state):
@@ -201,11 +200,16 @@ class TrackAnalyzer:
     def __get_target_class(self, frame, attrib, add_reversed):
         chunk_status = 'drop'
 
-        chunk_indexes = self.__get_chunk_indexes(frame)
-        indexes_are_avalible = self.__test_frame_availibility(chunk_indexes)
+        chunk_indexes = \
+            self.__get_chunk_indexes(frame)
+
+        indexes_are_avalible = \
+            self.__test_frames_availibility(chunk_indexes)
 
         if indexes_are_avalible:
-            chunk_status = self.__test_frame_status_integrity(chunk_indexes)
+            chunk_status = \
+                self.__test_frame_status_integrity(attrib, chunk_indexes)
+            print(chunk_indexes)
 
         # check_status
 
@@ -237,11 +241,23 @@ class TrackAnalyzer:
         return frames
 
 
-    @staticmethod
-    def __test_frame_availibility(frames): # test for availibility
-        pass
+    def __test_frames_availibility(self, frames) -> bool:
+        return all([(idx in self.track_frames.keys()) for idx in frames])
 
 
-    @staticmethod
-    def __test_frame_status_integrity(frames): # test for availibility
-        pass
+    def __test_frame_status_integrity(self, attrib, frames): # test for availibility
+        start_frame, end_frame = frames[0], frames[-1]
+        all_subframes = list(range(start_frame, end_frame, 1))
+
+        if attrib != c.BASE_CLASS:
+            pass
+
+        else:
+            attrib_not_changed = \
+                all([self.track_frames[frame]['attributes'][attrib]=='true'
+                     for frame in all_subframes]
+                )
+            if attrib_not_changed:
+                return attrib
+            else:
+                return 'drop'
