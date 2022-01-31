@@ -21,8 +21,9 @@ class TrackAnalyzer:
         self.sequences = []
 
         self.__load_track()
-        self.__get_markers()
-        #for key, val in self.markers.items():
+        self.__get_signal_switch_markers()
+        self.__get_stable_sequences()
+        #for key, val in self.switch_markers.items():
             #print(key, val)
 
 
@@ -90,24 +91,23 @@ class TrackAnalyzer:
         return coordinates
 
 
-    def __get_markers(self):
-        self.markers = OrderedDict()
+    def __get_signal_switch_markers(self):
+        self.switch_markers = OrderedDict()
         previous_attrib_states = OrderedDict()
 
         for attribute in self.attributes:
             if attribute in self.target_attributes:
-                self.markers[attribute] = OrderedDict()
+                self.switch_markers[attribute] = OrderedDict()
                 previous_attrib_states[attribute] = None
 
-        self.markers[c.BASE_CLASS] = OrderedDict()
+        self.switch_markers[c.BASE_CLASS] = OrderedDict()
         previous_attrib_states[c.BASE_CLASS] = None
 
         self.__add_markers(previous_attrib_states)
 
 
     def __add_markers(self, previous_attrib_states):
-        target_attribs = [attrib for attrib in self.target_attributes]
-        target_attribs.append(c.BASE_CLASS)
+        target_attribs = self.__get_attribs_list_with_base_class()
 
         for frame_number, metadata in self.track_frames.items():
             states = metadata['attributes']
@@ -122,6 +122,13 @@ class TrackAnalyzer:
 
             for attribute, state in states.items():
                 previous_attrib_states[attribute] = state
+
+
+    def __get_attribs_list_with_base_class(self):
+        attribs = [attrib for attrib in self.target_attributes]
+        attribs.append(c.BASE_CLASS)
+
+        return attribs
 
 
     def __evaluate_frame(self, frame_number, states,
@@ -160,11 +167,11 @@ class TrackAnalyzer:
             (previous_state == 'true') and (state == 'false')
 
         if first_frame or start_frame:
-            self.markers[attrib][frame_number] = 'start_frame'
+            self.switch_markers[attrib][frame_number] = 'start_frame'
         elif end_frame:
-            self.markers[attrib][frame_number - 1] = 'end_frame'
+            self.switch_markers[attrib][frame_number - 1] = 'end_frame'
         elif last_frame:
-            self.markers[attrib][frame_number] = 'end_frame'
+            self.switch_markers[attrib][frame_number] = 'end_frame'
 
 
     def generate_sequences(self, add_reversed):
@@ -172,7 +179,7 @@ class TrackAnalyzer:
             pass
 
         else:
-            for attrib, frames in self.markers.items():
+            for attrib, frames in self.switch_markers.items():
 
                 for frame, marker_type in frames.items():
 
@@ -315,3 +322,8 @@ class TrackAnalyzer:
         new_sequence = tuple((sequence_class, sequence_frames))
 
         return new_sequence
+
+
+    def __get_stable_sequences(self):
+        target_attribs = self.__get_attribs_list_with_base_class()
+        pass
