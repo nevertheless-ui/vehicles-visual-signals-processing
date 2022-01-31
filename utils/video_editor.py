@@ -4,9 +4,39 @@ Contains class TrackAnalyzer which generates script for video chunks extractions
 Each chunk contains data of source, lable, class and attributes
 """
 
+from collections import OrderedDict
 from utils import constants as c
 from utils.track_analyzer import TrackAnalyzer
 
+
+
+def get_chunks_stats(chunks):
+    stats = OrderedDict()
+    classes = OrderedDict()
+    counted_tracks = []
+    labels = []
+    chunk_classes = []
+
+    for chunk in chunks:
+        if chunk['track'] not in counted_tracks:
+            stats['tracks_in_script_total'] = \
+                stats.setdefault('tracks_in_script_total', 0) + 1
+            counted_tracks.append(chunk['track'])
+
+        if chunk['label'] not in labels:
+            labels.append(chunk['label'])
+
+        if chunk['class'] not in chunk_classes:
+            chunk_classes.append(chunk['class'])
+
+        classes[chunk['class']] = \
+            classes.setdefault(chunk['class'], 0) + 1
+
+    stats['labels'] = labels
+    stats['classes'] = classes
+    stats['tracks_used'] = counted_tracks
+
+    return stats
 
 
 def get_chunks(tracks, settings, labels, frames_total):
@@ -25,6 +55,7 @@ def get_chunks(tracks, settings, labels, frames_total):
             }
             chunks.append(new_chunk)
 
+        print(chunks)
     return tuple(chunks)
 
 
@@ -58,5 +89,6 @@ def get_script(extraction):
         labels=extraction.info['labels'],
         frames_total=extraction.info['frames_size']
     )
+    script['statistics'] = get_chunks_stats(script['chunks'])
 
     return script

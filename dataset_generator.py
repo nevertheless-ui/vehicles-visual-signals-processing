@@ -64,15 +64,20 @@ class ExtractionTask:
                         if info_attribute == 'chunks':
                             log_msg = \
                                 f"{attribute}: {info_attribute}: " \
-                                f"{len(value[info_attribute])} chunks total"
+                                f"{len(value[info_attribute])} chunks in script total"
                             logger.debug(log_msg)
+
+                        elif info_attribute == 'statistics':
+                            for stat_name, stat_data in value[info_attribute].items():
+                                log_msg = \
+                                        f"{attribute}: {stat_name}: {stat_data}"
+                                logger.debug(log_msg)
 
                         else:
                             log_msg = \
                                 f"{attribute}: {info_attribute}: " \
                                 f"{value[info_attribute]}"
                             logger.debug(log_msg)
-                    pass
 
                 else:
                     logger.debug(f"{attribute}: {value}")
