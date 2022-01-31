@@ -174,9 +174,10 @@ class TrackAnalyzer:
 
         else:
             for attrib, frames in self.markers.items():
-                for frame, frame_type in frames.items():
-                    if frame_type=='start_frame':
-                        self.__get_target_class(frame, attrib, add_reversed)
+                for frame, marker_type in frames.items():
+                    if marker_type=='start_frame':
+                        self.__get_target_class(frame, marker_type,
+                                                attrib, add_reversed)
 
             #while not self.is_depleted:
 
@@ -197,7 +198,8 @@ class TrackAnalyzer:
             self.is_depleted = True
 
 
-    def __get_target_class(self, frame, attrib, add_reversed):
+    def __get_target_class(self, frame, marker_type,
+                           attrib, add_reversed):
         chunk_status = 'drop'
 
         chunk_indexes = \
@@ -208,8 +210,9 @@ class TrackAnalyzer:
 
         if indexes_are_avalible:
             chunk_status = \
-                self.__test_frame_status_integrity(attrib, chunk_indexes)
-            print(chunk_indexes)
+                self.__test_frame_status_integrity(frame, attrib, marker_type,
+                                                   chunk_indexes)
+            print(attrib, frame, marker_type, chunk_indexes, chunk_status)
 
         # check_status
 
@@ -245,19 +248,74 @@ class TrackAnalyzer:
         return all([(idx in self.track_frames.keys()) for idx in frames])
 
 
-    def __test_frame_status_integrity(self, attrib, frames): # test for availibility
-        start_frame, end_frame = frames[0], frames[-1]
-        all_subframes = list(range(start_frame, end_frame, 1))
+    def __test_frame_status_integrity(self, frame, attrib,
+                                      marker_type, frames):
+        chunk_status = 'failed'
+
+        start_frame, end_frame = \
+            frames[0], frames[-1]
+        subframes = list(range(start_frame, end_frame + 1, 1))
+        print(subframes, len(subframes))
 
         if attrib != c.BASE_CLASS:
-            pass
+            chunk_status = \
+                self.__evaluate_attrib_frames(frame, attrib,
+                                              marker_type, subframes)
 
-        else:
-            attrib_not_changed = \
-                all([self.track_frames[frame]['attributes'][attrib]=='true'
-                     for frame in all_subframes]
-                )
-            if attrib_not_changed:
-                return attrib
-            else:
-                return 'drop'
+        elif attrib == c.BASE_CLASS:
+            status_is_stable = \
+                self.__check_slice_attrib_status(attrib, subframes, 'true')
+
+            if status_is_stable: chunk_status = 'passed'
+
+        return chunk_status
+
+
+    def __evaluate_attrib_frames(self, frame, attrib,
+                                 marker_type, frames) -> str:
+        chunk_status = 'failed'
+
+        if marker_type=='start_frame':
+            left_frames, right_frames = \
+                self.__get_attrib_slice(marker_type, frame, frames)
+
+            left_is_false, right_is_true = (
+                self.__check_slice_attrib_status(attrib, left_frames, 'false'),
+                self.__check_slice_attrib_status(attrib, right_frames, 'true')
+            )
+
+            if left_is_false and right_is_true: chunk_status = 'passed'
+
+        elif marker_type=='end_frame':
+            left_frames, right_frames = \
+                self.__get_attrib_slice(marker_type, frame, frames)
+
+            left_is_true, right_is_false = (
+                self.__check_slice_attrib_status(attrib, left_frames, 'true'),
+                self.__check_slice_attrib_status(attrib, right_frames, 'false')
+            )
+
+            if left_is_true and right_is_false: chunk_status = 'passed'
+
+        return chunk_status
+
+
+    @staticmethod
+    def __get_attrib_slice(marker_type, frame, frames) -> tuple:
+        center_idx = frames.index(frame)
+
+        if marker_type=='end_frame': center_idx += 1
+
+        left_slice = frames[:center_idx]
+        right_slice = frames[center_idx:]
+
+        return left_slice, right_slice
+
+
+    def __check_slice_attrib_status(self, attrib,
+                                    frames, target_value) -> bool:
+        slice_status = \
+            all([self.track_frames[frame]['attributes'][attrib]==target_value
+                 for frame in frames])
+
+        return slice_status
