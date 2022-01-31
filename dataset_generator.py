@@ -141,9 +141,16 @@ def generate_dataset(video_path, output_path):
 
 
 
+def check_settings():
+    pass
+
+
+
 if __name__ == '__main__':
     if c.ENABLE_DEBUG_LOGGER:
         logger = logging_tool.get_logger()
+
+    check_settings() # add asserts to check CONSTANTS
 
     generate_dataset(
         video_path=c.DATA_DIR_PATH,
