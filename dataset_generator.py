@@ -18,8 +18,6 @@ from utils import video_writer
 class ExtractionTask:
     def __init__(self, import_path, export_path,
                  filename, annotation, overwrite):
-        assert isinstance(overwrite, bool), "Overwrite must be boolean type"
-
         self.source_path = os.path.join(import_path, filename)
         self.output_path = os.path.join(export_path, f"{filename}_data")
         self.annotation_path = os.path.join(import_path, annotation)
@@ -113,9 +111,6 @@ def analyze_video(source_path, output_path, file, annotation):
 
 
 def generate_dataset(video_path, output_path):
-    assert os.path.isdir(video_path) != False, \
-        f"Input path is not directory"
-
     supported_files = fs_tool.extract_video_from_path(video_path)
 
     for file, annotation in supported_files.items():
@@ -129,7 +124,11 @@ def generate_dataset(video_path, output_path):
                 extraction.log_attributes()
                 logger.debug(f"Writing chunks to: {extraction.output_path}")
 
-            video_writer.write_chunks(extraction)
+            video_writer.start_writing_video_chunks(
+                source=extraction.source_path,
+                output=extraction.output_path,
+                script=extraction.script
+            )
 
         else:
             if c.ENABLE_DEBUG_LOGGER:
@@ -138,8 +137,10 @@ def generate_dataset(video_path, output_path):
 
 
 def check_settings():
-    pass
-    #assert c.CHUNK_SIZE % 2 != 0, 'Chunk size must be odd!'
+    assert (c.CHUNK_SIZE % 2) != 0, 'Chunk size must be odd!'
+    assert isinstance(c.CHUNK_SIZE, int), "Overwrite must be int type"
+    assert isinstance(c.OVERWRITE, bool), "Overwrite must be boolean type"
+    assert os.path.isdir(c.DATA_DIR_PATH) != False, "Source is not directory"
 
 
 
