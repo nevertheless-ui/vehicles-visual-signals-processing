@@ -43,15 +43,6 @@ class ExtractionTask:
         fs_tool.create_dir(path=self.output_path, overwrite=c.OVERWRITE)
 
 
-    def write_chunks(self):
-        assert self.script, "No script in extraction!"
-
-        video_writer.write_chunks(
-            output=self.output_path,
-            script=self.script
-        )
-
-
     def log_attributes(self):
         long_attributes = ('script', 'info')
 
@@ -115,7 +106,7 @@ def analyze_video(source_path, output_path, file, annotation):
         c.OVERWRITE
     )
     extraction.read_annotation()
-    extraction.is_suitable = supported_labels_check(extraction)
+    extraction.is_supported = supported_labels_check(extraction)
 
     return extraction
 
@@ -130,7 +121,7 @@ def generate_dataset(video_path, output_path):
     for file, annotation in supported_files.items():
         extraction = analyze_video(video_path, output_path, file, annotation)
 
-        if extraction.is_suitable:
+        if extraction.is_supported:
             extraction.create_output_dir()
             extraction.script = video_editor.get_script(extraction)
 
@@ -138,7 +129,7 @@ def generate_dataset(video_path, output_path):
                 extraction.log_attributes()
                 logger.debug(f"Writing chunks to: {extraction.output_path}")
 
-            extraction.write_chunks()
+            video_writer.write_chunks(extraction)
 
         else:
             if c.ENABLE_DEBUG_LOGGER:
@@ -148,6 +139,7 @@ def generate_dataset(video_path, output_path):
 
 def check_settings():
     pass
+    #assert c.CHUNK_SIZE % 2 != 0, 'Chunk size must be odd!'
 
 
 
