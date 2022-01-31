@@ -22,9 +22,8 @@ class TrackAnalyzer:
 
         self.__load_track()
         self.__get_markers()
-
-        for key, val in self.markers.items():
-            print(key, val)
+        #for key, val in self.markers.items():
+            #print(key, val)
 
 
     def __len__(self) -> int:
@@ -140,7 +139,7 @@ class TrackAnalyzer:
                     continue
 
                 elif (previous_state != state) or is_last_frame:
-                        print(attrib, frame_number, (previous_state, '>', state))
+                        #print(attrib, frame_number, (previous_state, '>', state))
                         self.__mark_frame(
                             attrib,
                             frame_number,
@@ -170,60 +169,45 @@ class TrackAnalyzer:
 
     def generate_sequences(self, add_reversed):
         if len(self.track_frames) < self.min_track_size:
-            self.is_depleted = True
+            pass
 
         else:
             for attrib, frames in self.markers.items():
+
                 for frame, marker_type in frames.items():
-                    if marker_type=='start_frame':
-                        self.__get_target_class(frame, marker_type,
-                                                attrib, add_reversed)
 
-            #while not self.is_depleted:
+                    if marker_type in ('start_frame', 'end_frame'):
+                        new_sequence = \
+                            self.__get_target_sequence(frame, marker_type,
+                                                       attrib, add_reversed)
 
-            sequence_class = c.BASE_CLASS
-            sequence_frames = OrderedDict()
-            for x in [x for x in range(self.min_track_size)]:
-                sequence_frames[str(x)] = {
-                'tl':(1, 1),
-                'tr':(2, 1),
-                'bl':(1, 2),
-                'br':(2, 2),
-            }
-
-            new_sequence = tuple((sequence_class, sequence_frames))
-
-            self.sequences.append(new_sequence)
-
-            self.is_depleted = True
+                    if new_sequence is not None:
+                        print(new_sequence)
+                        self.sequences.append(new_sequence)
 
 
-    def __get_target_class(self, frame, marker_type,
-                           attrib, add_reversed):
-        chunk_status = 'drop'
+    def __get_target_sequence(self, frame, marker_type,
+                              attrib, add_reversed) -> tuple:
+        new_sequence = None
+        sequence_status = 'failed'
 
-        chunk_indexes = \
+        sequence_indexes = \
             self.__get_chunk_indexes(frame)
 
         indexes_are_avalible = \
-            self.__test_frames_availibility(chunk_indexes)
+            self.__test_frames_availibility(sequence_indexes)
 
         if indexes_are_avalible:
-            chunk_status = \
+            sequence_status = \
                 self.__test_frame_status_integrity(frame, attrib, marker_type,
-                                                   chunk_indexes)
-            print(attrib, frame, marker_type, chunk_indexes, chunk_status)
+                                                   sequence_indexes)
 
-        # check_status
+        if sequence_status == 'passed':
+            new_sequence = \
+                self.__get_sequence(attrib, sequence_indexes,
+                                    add_reversed, marker_type)
 
-
-        #self.track_frames[frame]
-
-        #new_sequence = (sequence_class, sequence_frames)
-        #new_sequence = tuple(new_sequence)
-
-        #self.sequences.append(new_sequence)
-        pass
+        return new_sequence
 
 
     @staticmethod
@@ -250,15 +234,15 @@ class TrackAnalyzer:
 
     def __test_frame_status_integrity(self, frame, attrib,
                                       marker_type, frames):
-        chunk_status = 'failed'
+        sequence_status = 'failed'
 
         start_frame, end_frame = \
             frames[0], frames[-1]
         subframes = list(range(start_frame, end_frame + 1, 1))
-        print(subframes, len(subframes))
+        #print(subframes, len(subframes))
 
         if attrib != c.BASE_CLASS:
-            chunk_status = \
+            sequence_status = \
                 self.__evaluate_attrib_frames(frame, attrib,
                                               marker_type, subframes)
 
@@ -266,19 +250,19 @@ class TrackAnalyzer:
             status_is_stable = \
                 self.__check_slice_attrib_status(attrib, subframes, 'true')
 
-            if status_is_stable: chunk_status = 'passed'
+            if status_is_stable: sequence_status = 'passed'
 
-        return chunk_status
+        return sequence_status
 
 
     def __evaluate_attrib_frames(self, frame, attrib,
                                  marker_type, frames) -> str:
         chunk_status = 'failed'
 
-        if marker_type=='start_frame':
-            left_frames, right_frames = \
+        left_frames, right_frames = \
                 self.__get_attrib_slice(marker_type, frame, frames)
 
+        if marker_type=='start_frame':
             left_is_false, right_is_true = (
                 self.__check_slice_attrib_status(attrib, left_frames, 'false'),
                 self.__check_slice_attrib_status(attrib, right_frames, 'true')
@@ -287,9 +271,6 @@ class TrackAnalyzer:
             if left_is_false and right_is_true: chunk_status = 'passed'
 
         elif marker_type=='end_frame':
-            left_frames, right_frames = \
-                self.__get_attrib_slice(marker_type, frame, frames)
-
             left_is_true, right_is_false = (
                 self.__check_slice_attrib_status(attrib, left_frames, 'true'),
                 self.__check_slice_attrib_status(attrib, right_frames, 'false')
@@ -319,3 +300,18 @@ class TrackAnalyzer:
                  for frame in frames])
 
         return slice_status
+
+
+    def __get_sequence(self, attrib, sequence_indexes, add_reversed, marker_type) -> tuple:
+        sequence_class = attrib
+        sequence_frames = OrderedDict()
+
+        if add_reversed and (marker_type=='end_frame'):
+            sequence_indexes = list(reversed(sequence_indexes))
+
+        for frame in sequence_indexes:
+            sequence_frames[frame] = self.track_frames[frame]['coordinates']
+
+        new_sequence = tuple((sequence_class, sequence_frames))
+
+        return new_sequence
