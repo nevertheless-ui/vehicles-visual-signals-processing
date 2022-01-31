@@ -189,7 +189,7 @@ class TrackAnalyzer:
                                                        attrib, add_reversed)
 
                     if new_sequence is not None:
-                        print(new_sequence)
+                        #print(new_sequence)
                         self.sequences.append(new_sequence)
 
 

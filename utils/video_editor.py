@@ -55,7 +55,6 @@ def get_chunks(tracks, settings, labels, frames_total):
             }
             chunks.append(new_chunk)
 
-        print(chunks)
     return tuple(chunks)
 
 

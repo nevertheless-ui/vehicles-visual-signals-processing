@@ -8,7 +8,7 @@ import os
 
 from utils import constants as c
 from utils import logging_tool
-from utils import filesystem_tool as fs_tool
+from utils import filesystem_tool as fs
 from utils import annotation_parser
 from utils import video_editor
 from utils import video_writer
@@ -38,7 +38,7 @@ class ExtractionTask:
 
 
     def create_output_dir(self):
-        fs_tool.create_dir(path=self.output_path, overwrite=c.OVERWRITE)
+        fs.create_dir(self.output_path, c.OVERWRITE)
 
 
     def log_attributes(self):
@@ -111,7 +111,7 @@ def analyze_video(source_path, output_path, file, annotation):
 
 
 def generate_dataset(video_path, output_path):
-    supported_files = fs_tool.extract_video_from_path(video_path)
+    supported_files = fs.extract_video_from_path(video_path)
 
     for file, annotation in supported_files.items():
         extraction = analyze_video(video_path, output_path, file, annotation)
