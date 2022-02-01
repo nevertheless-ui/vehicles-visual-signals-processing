@@ -2,6 +2,7 @@
 Module for Video Writing.
 Read video and generates chunks from script description.
 """
+from array import array
 import os
 import cv2
 
@@ -48,7 +49,7 @@ class ChunkWriter:
         for num, chunk in enumerate(self.chunks):
             chunk_path = self.__get_chunk_path(num, chunk)
 
-            output = self.__get_output()
+            output = self.__get_output(chunk_path)
 
             if c.ENABLE_DEBUG_LOGGER:
                 self.logger.debug(f"Write: {chunk_path}")
@@ -81,9 +82,9 @@ class ChunkWriter:
     def __get_output(self, chunk_path):
         video_output = cv2.VideoWriter(
             chunk_path,
-            codec=self.codec,
-            fps=self.fps,
-            resolution=self.resolution,
+            self.codec,
+            self.fps,
+            self.resolution,
         )
         return video_output
 
@@ -91,7 +92,7 @@ class ChunkWriter:
 
 
 
-    def __resize_image_with_fill(image, target_image_resolution):
+    def __resize_image_with_fill(image, target_image_resolution) -> array:
         border_v = 0
         border_h = 0
         img_w, img_h = image.shape[0], image.shape[1]
@@ -112,6 +113,10 @@ class ChunkWriter:
         return image
 
 
+    def release(self):
+        self.capture.release()
+
+
 
 def start_writing_video_chunks(source, output, script, logger):
     if c.ENABLE_DEBUG_LOGGER:
@@ -122,3 +127,4 @@ def start_writing_video_chunks(source, output, script, logger):
     writer = ChunkWriter(source, output, script, logger)
 
     writer.write_chunks()
+    writer.release()
