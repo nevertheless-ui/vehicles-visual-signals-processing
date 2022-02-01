@@ -45,20 +45,28 @@ class ChunkWriter:
 
     def write_chunks(self):
         for num, chunk in enumerate(self.chunks):
+            frames_status = []
             chunk_path = self.__get_chunk_path(num, chunk)
+            log_msg = f"Writing: {chunk_path}"
 
             output = self.__get_output(chunk_path)
 
-            if c.ENABLE_DEBUG_LOGGER:
-                self.logger.debug(f"Write: {chunk_path}")
+            for frame, coordinates in chunk['sequence'].items():
+                frames_status.append(
+                    self._add_frame_to_chunk(output, frame, coordinates)
+                )
 
-        #iterate over chunks
-        ## 1. create output
-        ## 2. get frame
-        ## 3. resize frame
-        ## 4. write to output
-        ## 5. release
-        pass
+            output.release()
+
+            chunk_integrity = self.__test_chunk(chunk_path)
+
+            if not chunk_integrity:
+                os.remove(chunk_path)
+                log_msg = f"WARNING: BROKEN_CHUNK: {chunk_path}"
+
+            if c.ENABLE_DEBUG_LOGGER:
+                self.logger.debug(log_msg)
+
 
     def __get_chunk_path(self, num, chunk):
         class_path = os.path.join(self.output_path, chunk['class'])
@@ -87,9 +95,49 @@ class ChunkWriter:
         return video_output
 
 
+    def _add_frame_to_chunk(self, output, frame, coordinates):
+        self.capture.set(1, frame)
+        frame_status, image = self.capture.read()
+
+        # Box coordinates from two points: (A[ax, ay], B[bx, by])
+        ax, ay, bx, by = \
+            self.__get_slice_from_coordinates(coordinates)
+
+        image_crop = image[ay:by, ax:bx]
+        image_crop = self.__resize_image_with_fill(
+            image=image_crop,
+            target_image_resolution=c.EXTRACTOR_RESOLUTION
+        )
+
+        output.write(image_crop)
+
+        return frame_status
 
 
+    @staticmethod
+    def __test_chunk(chunk_path):
+        capture = cv2.VideoCapture(chunk_path)
+        for _ in range(c.CHUNK_SIZE):
+            status, frame = capture.read()
 
+            if status == False:
+                break
+
+        return status
+
+
+    @staticmethod
+    def __get_slice_from_coordinates(coordinates) -> tuple:
+        ax = coordinates['tl'][0]
+        ay = coordinates['tl'][1]
+
+        bx = coordinates['br'][0]
+        by = coordinates['br'][1]
+
+        return ax, ay, bx, by
+
+
+    @staticmethod
     def __resize_image_with_fill(image, target_image_resolution):
         border_v = 0
         border_h = 0
@@ -113,7 +161,6 @@ class ChunkWriter:
 
     def release(self):
         self.capture.release()
-
 
 
 def start_writing_video_chunks(source, output, script, logger):

@@ -149,7 +149,7 @@ if __name__ == '__main__':
     if c.ENABLE_DEBUG_LOGGER:
         logger = logging_tool.get_logger()
 
-    check_settings() # add asserts to check CONSTANTS
+    check_settings()
 
     generate_dataset(
         video_path=c.DATA_DIR_PATH,
