@@ -2,12 +2,10 @@
 Module for Video Writing.
 Read video and generates chunks from script description.
 """
-from array import array
 import os
 import cv2
 
 from utils import constants as c
-from utils import logging_tool
 from utils import filesystem_tool as fs
 
 
@@ -92,7 +90,7 @@ class ChunkWriter:
 
 
 
-    def __resize_image_with_fill(image, target_image_resolution) -> array:
+    def __resize_image_with_fill(image, target_image_resolution):
         border_v = 0
         border_h = 0
         img_w, img_h = image.shape[0], image.shape[1]
