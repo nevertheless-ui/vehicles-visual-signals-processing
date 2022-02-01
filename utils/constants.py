@@ -16,13 +16,13 @@ SKIP_ATTRIBUTE = ('annotation_file',
 # DATA
 DATA_DIR_PATH = 'data\\raw_data'
 EXTRACTOR_RESOLUTION = (500, 500) # pixels
-VIDEO_CHUNK_SIZE = 2 # seconds
-SKIP_FRAME_NUM = 1
-TARGET_FPS = 30
+#VIDEO_CHUNK_SIZE = 2 # seconds
+#SKIP_FRAME_NUM = 1
+#TARGET_FPS = 30
 SUPPORTED_VIDEO_FORMATS = ('.ts')
 OVERWRITE = True                  # Output dataset directory
 
-# VIDEO_EDITOR
+# VIDEO
 TARGET_ATTRIBUTES = {
     'Vehicle':(
         #'alarm',
