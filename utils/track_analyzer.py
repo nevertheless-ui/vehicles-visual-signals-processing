@@ -189,7 +189,6 @@ class TrackAnalyzer:
                                                        attrib, add_reversed)
 
                     if new_sequence is not None:
-                        #print(new_sequence)
                         self.sequences.append(new_sequence)
 
 
@@ -246,7 +245,6 @@ class TrackAnalyzer:
         start_frame, end_frame = \
             frames[0], frames[-1]
         subframes = list(range(start_frame, end_frame + 1, 1))
-        #print(subframes, len(subframes))
 
         if attrib != c.BASE_CLASS:
             sequence_status = \
@@ -272,7 +270,7 @@ class TrackAnalyzer:
         if marker_type=='start_frame':
             left_is_false, right_is_true = (
                 self.__check_slice_attrib_status(attrib, left_frames, 'false'),
-                self.__check_slice_attrib_status(attrib, right_frames, 'true')
+                self.__check_slice_attrib_status(attrib, right_frames, 'true'),
             )
 
             if left_is_false and right_is_true: chunk_status = 'passed'
@@ -280,7 +278,7 @@ class TrackAnalyzer:
         elif marker_type=='end_frame':
             left_is_true, right_is_false = (
                 self.__check_slice_attrib_status(attrib, left_frames, 'true'),
-                self.__check_slice_attrib_status(attrib, right_frames, 'false')
+                self.__check_slice_attrib_status(attrib, right_frames, 'false'),
             )
 
             if left_is_true and right_is_false: chunk_status = 'passed'

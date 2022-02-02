@@ -1,5 +1,9 @@
 """
-Main Dataset Generator module of the project for vehicle signals recognition
+Main Dataset Generator module of the project for vehicle signals
+recognition.
+
+Constants can be changed in: ./utils/constants.py
+
 Author: Filippenko Artyom, 2021-2022
 MISIS Master Degree Project
 """
@@ -47,26 +51,29 @@ class ExtractionTask:
         for attribute, value in self.__dict__.items():
             if attribute not in c.SKIP_ATTRIBUTE:
 
-                # Makes logs shorter. Script contains all chunks data.
+                # Makes logs shorter. Script contains too much data.
                 if attribute in long_attributes:
+
                     for info_attribute in value.keys():
                         if info_attribute == 'chunks':
                             log_msg = \
                                 f"{attribute}: {info_attribute}: " \
-                                f"{len(value[info_attribute])} chunks in script total"
-                            logger.debug(log_msg)
+                                f"{len(value[info_attribute])} " \
+                                "chunks in script total"
 
                         elif info_attribute == 'statistics':
-                            for stat_name, stat_data in value[info_attribute].items():
+                            stats = value[info_attribute].items()
+
+                            for stat_name, stat_data in stats:
                                 log_msg = \
-                                        f"{attribute}: {stat_name}: {stat_data}"
-                                logger.debug(log_msg)
+                                    f"{attribute}: {stat_name}: {stat_data}"
 
                         else:
                             log_msg = \
                                 f"{attribute}: {info_attribute}: " \
                                 f"{value[info_attribute]}"
-                            logger.debug(log_msg)
+
+                        logger.debug(log_msg)
 
                 else:
                     logger.debug(f"{attribute}: {value}")
