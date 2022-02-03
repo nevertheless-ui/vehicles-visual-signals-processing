@@ -131,12 +131,14 @@ def generate_dataset(video_path, output_path):
                 extraction.log_attributes()
                 logger.debug(f"Writing chunks to: {extraction.output_path}")
 
-            video_writer.start_writing_video_chunks(
+            writer_report = video_writer.start_writing_video_chunks(
                 source=extraction.source_path,
                 output=extraction.output_path,
                 script=extraction.script,
                 logger=logger
             )
+
+            log_writer_report(writer_report)
 
         else:
             if c.ENABLE_DEBUG_LOGGER:
@@ -144,7 +146,29 @@ def generate_dataset(video_path, output_path):
 
 
 
+def log_writer_report(writer_report):
+    """Writes to log file report from writer. Report is useful for
+    understanding behaviour of writer and catching broken chunks.
+
+    Args:
+        writer_report (OrderedDict): Any key
+    """
+    if c.ENABLE_DEBUG_LOGGER:
+
+        for name, value in writer_report.items():
+
+            if name == 'Broken chunks list' and len(value) > 0:
+                for record in value:
+                    logger.debug(f"Report: {name}: {record}")
+
+            else:
+                logger.debug(f"Report: {name}: {value}")
+
+
+
 def check_settings():
+    """Checking constants for correct input format and values
+    """
     assert (c.CHUNK_SIZE % 2) != 0, 'Chunk size must be odd!'
     assert isinstance(c.CHUNK_SIZE, int), "Overwrite must be int type"
     assert isinstance(c.OVERWRITE, bool), "Overwrite must be boolean type"
@@ -153,6 +177,8 @@ def check_settings():
 
 
 if __name__ == '__main__':
+    """Main module. Initializes dataset generator.
+    """
     if c.ENABLE_DEBUG_LOGGER:
         logger = logging_tool.get_logger()
 

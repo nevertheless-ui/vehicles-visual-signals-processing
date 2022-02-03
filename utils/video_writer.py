@@ -4,6 +4,8 @@
 import os
 import cv2
 
+from collections import OrderedDict
+
 from utils import constants as c
 from utils import filesystem_tool as fs
 
@@ -30,6 +32,7 @@ class ChunkWriter:
 
         self.fps = c.CHUNK_SIZE
         self.resolution = c.EXTRACTOR_RESOLUTION
+        self.broken_chunks = []
 
         self.source_name = self.script['source_name']
         self.chunks = self.script['chunks']
@@ -94,8 +97,16 @@ class ChunkWriter:
         3. Test chunk integrity
         4. If passed - continue. Else - delete chunk.
         """
+        self.valid_chunks_counter = 0
+
         for num, chunk in enumerate(self.chunks):
-            chunk_path = self.__get_chunk_path(num, chunk)
+            try:
+                center_index = (c.CHUNK_SIZE - 1) // 2
+                frame_num = list(chunk['sequence'].keys())[center_index]
+            except IndexError:
+                frame_num = 'ERROR'
+
+            chunk_path = self.__get_chunk_path(num, frame_num, chunk)
             log_msg = f"Writing: {chunk_path}"
 
             output = self.__get_output(chunk_path)
@@ -108,6 +119,8 @@ class ChunkWriter:
             chunk_validation_passed = self.__validate_chunk(chunk_path)
 
             if not chunk_validation_passed:
+                self.broken_chunks.append(chunk_path)
+
                 try:
                     os.remove(chunk_path)
                     log_msg = f"WARNING: BROKEN_CHUNK: {chunk_path}"
@@ -115,16 +128,21 @@ class ChunkWriter:
                     log_msg = f"FAILED TO REMOVE: {chunk_path}"
                     pass
 
+            else:
+                self.valid_chunks_counter += 1
+
             if c.ENABLE_DEBUG_LOGGER:
                 self.logger.debug(log_msg)
 
 
-    def __get_chunk_path(self, num, chunk):
+    def __get_chunk_path(self, num, frame_num, chunk):
         """Generates path to save new chunk. Filename format:
-        {file}_{label_name}_{class_name}_tr{track_num}_seq{chunk_num}
+        {file}_{label_name}_{class_type}_{class_name}_tr{track_num}_
+        seq{chunk_num}_fr{frame_num}.mjpg
 
         Args:
             num (int): Number of iterator step - unique for chunk
+            frame_num (int): Number of center frame of sequence
             chunk (dict): Dict from extraction task script.
 
         Returns:
@@ -135,11 +153,14 @@ class ChunkWriter:
         file = self.source_name
         label_name = chunk['label']
         class_name = chunk['class']
+        class_type = chunk['type']
         track_num = str.zfill(str(chunk['track']), 4)
         chunk_num = str.zfill(str(num), 4)
+        frame_num = str.zfill(str(frame_num), 6)
 
         chunk_name = \
-            f"{file}_{label_name}_{class_name}_tr{track_num}_seq{chunk_num}"
+            f"{file}_{label_name}_{class_type}_{class_name}_" \
+            f"tr{track_num}_seq{chunk_num}_fr{frame_num}"
 
         chunk_path = os.path.join(class_path, f"{chunk_name}.mjpg")
 
@@ -300,6 +321,29 @@ class ChunkWriter:
         return output_image
 
 
+    def get_report(self):
+        """Creates report from writer. Report content:
+        - valid chunks counter
+        - broken chunks counter
+        - list of broken chunks
+
+        Returns:
+            OrderedDict: Availible keys: [
+                'Valid chunks total',
+                'Broken chunks total',
+                'Broken chunks list'
+                ]
+        """
+        report = OrderedDict()
+
+        report['Valid chunks total'] = self.valid_chunks_counter
+        report['Broken chunks total'] = len(self.broken_chunks)
+        report['Broken chunks list'] = self.broken_chunks
+
+        return report
+
+
+
 
 def start_writing_video_chunks(source, output, script, logger):
     """Starts process of writing video chunks from source file to output
@@ -321,3 +365,7 @@ def start_writing_video_chunks(source, output, script, logger):
 
     writer.write_chunks()
     writer.release()
+
+    writer_report = writer.get_report()
+
+    return writer_report

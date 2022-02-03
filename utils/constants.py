@@ -25,17 +25,18 @@ OVERWRITE = True                  # Output dataset directory
 # VIDEO
 TARGET_ATTRIBUTES = {
     'Vehicle':(
-        #'alarm',
+        'alarm',
         'brake',
-        #'turn_left',
-        #'turn_right',
+        'turn_left',
+        'turn_right',
     )
 }
 BASE_CLASS = 'idle'
 CHUNK_SIZE = 5 # frames - MUST BE ODD
 FRAME_STEP = 5 # frames shift
+CHUNK_BORDER_RATIO = 2 # Slice border multiplyer to make bigger for dynamic markers
 CLASS_OVERLAY = True  # Same frames can be used for different classes
-CLASS_BALANCED = True # Balance classes?
+CLASS_BALANCED = False # Balance classes?
 ADD_REVERSED=False # EXPERIMENTAL. Try to reverse frames to augment data
 
 

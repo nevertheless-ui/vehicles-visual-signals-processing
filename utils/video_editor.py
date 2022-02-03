@@ -44,16 +44,20 @@ def get_chunks(tracks, settings, labels, frames_total):
 
     for track in tracks:
         analyst = TrackAnalyzer(track, settings, labels, frames_total)
-        analyst.generate_sequences(add_reversed=c.ADD_REVERSED)
+        analyst.generate_sequences(extend_with_reversed=c.ADD_REVERSED)
 
-        for sequence_class, sequence_frames in analyst.sequences:
-            new_chunk = {
-                'track':analyst.track_id,
-                'label':analyst.track_label,
-                'class':sequence_class,
-                'sequence':sequence_frames
-            }
-            chunks.append(new_chunk)
+        for attrib_sequences in analyst.sequences.values():
+            for sequence_class, sequence_type, sequence_frames \
+                    in attrib_sequences:
+                new_chunk = {
+                    'track':analyst.track_id,
+                    'label':analyst.track_label,
+                    'class':sequence_class,
+                    'type':sequence_type,
+                    'sequence':sequence_frames,
+                }
+
+                chunks.append(new_chunk)
 
     return tuple(chunks)
 
