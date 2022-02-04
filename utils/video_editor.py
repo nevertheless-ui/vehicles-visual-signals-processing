@@ -1,7 +1,8 @@
 """
 Module for Video Extraction.
-Contains class TrackAnalyzer which generates script for video chunks extractions
-Each chunk contains data of source, lable, class and attributes
+Contains class TrackAnalyzer which generates script for video chunks
+extractions. Each chunk contains data of source, lable, class and
+attributes.
 """
 
 from collections import OrderedDict
@@ -11,11 +12,23 @@ from utils.track_analyzer import TrackAnalyzer
 
 
 def get_chunks_stats(chunks):
-    stats = OrderedDict()
-    classes = OrderedDict()
-    counted_tracks = []
-    labels = []
-    chunk_classes = []
+    """Iterates over chunks and collects info about main features, such
+    as:
+    - labels
+    - classes
+    - tracks
+
+    Args:
+        chunks (list): Tupls of chunks with video data
+
+    Returns:
+        OrderedDict: Statistics of chunks
+    """
+    stats, classes = \
+        OrderedDict(), OrderedDict()
+
+    counted_tracks, labels, chunk_classes = \
+        [], [], []
 
     for chunk in chunks:
         if chunk['track'] not in counted_tracks:
@@ -40,6 +53,25 @@ def get_chunks_stats(chunks):
 
 
 def get_chunks(tracks, settings, labels, frames_total):
+    """Iterates over tracks and analyze each track. Runs analysis tool
+    to generate sequences. Sequences from tracks are appended to general
+    chunks list with adding attributes of track, label, class, type and
+    frames.
+
+    Args:
+        tracks (obj): Track object of ExtractionTask instance
+        settings (dict): Script settings
+        labels (dict): Labels from .info of ExtractionTask instance
+        frames_total (int): Record from .info of ExtractionTask instance
+
+    Returns:
+        tuple: ({'track':(int), 'label':(str), 'class':(str),
+            'type':(str),
+            'sequence':(
+                {frame:{'coordinates': (ax, ay, bx, by)}}, ...)},
+                ...
+            )
+    """
     chunks = []
 
     for track in tracks:
@@ -64,6 +96,15 @@ def get_chunks(tracks, settings, labels, frames_total):
 
 
 def read_script_settings():
+    """Reads CONSTANTS and generate settings for script.
+    - target_attributes
+    - base_class
+    - classes_overlay
+    - chunks_size
+
+    Returns:
+        dict: Settings in one object
+    """
     settings = {}
     labels_and_attributes = \
         {key:value for (key,value) in c.TARGET_ATTRIBUTES.items()}
@@ -78,6 +119,16 @@ def read_script_settings():
 
 
 def get_script(extraction):
+    """Creates script for extraction. Makes brief analysis and adds
+    settings for script. Collect chunks from the annotation.
+
+    Args:
+        extraction (obj): Instance of class ExtractionTask
+
+    Returns:
+        dict: {'source_name':str, 'script_settings':dict,
+               'chunks':tuple, 'statistics':dict}
+    """
     extraction_status = \
         extraction.info is not None and \
         extraction.annotation_tracks is not None
