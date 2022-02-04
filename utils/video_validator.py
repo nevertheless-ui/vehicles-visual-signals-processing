@@ -41,8 +41,8 @@ def get_annotations(video_path, video_files, files_in_directory):
     Returns:
         dict: Where: key - video name, value - annotation name
     """
-    assert os.path.isdir(video_path), 'Video path is not a directory.'
-    assert len(video_files) > 0, "No supported video files in directory."
+    assert os.path.isdir(video_path), "Video path is not a directory."
+    assert len(video_files) > 0, "No supported video files in directory"
     assert len(video_files) <= len(files_in_directory)
 
     annotations = {}
