@@ -14,6 +14,18 @@ from utils import video_validator
 
 
 def create_dir(path, overwrite=False):
+    """Creates new directory. If 'overwrite' is true - remove existing
+    directory and creates a new one. Otherwise - add appendix to the
+    end of directory name.
+
+    Args:
+        path (str): Path to the new directory
+        overwrite (bool, optional): Remove old directory, if exists
+            already. Defaults to False.
+
+    Returns:
+        next_path
+    """
     try:
         os.mkdir(path)
 
@@ -32,9 +44,24 @@ def create_dir(path, overwrite=False):
 
             os.mkdir(next_path)
 
+            path = next_path
+
+    return path
+
 
 
 def extract_supported_filenames(filenames):
+    """Yields video files with supported extention. Refer to constants
+    to check or add more supported extentions.
+
+    Default tested ext - '.ts' (5 min, 30 fps)
+
+    Args:
+        filenames (list): List of file names
+
+    Yields:
+        str: Video file name
+    """
     assert isinstance(filenames, list)
     assert len(filenames) > 0
     assert len(c.SUPPORTED_VIDEO_FORMATS) >= 1
@@ -46,14 +73,23 @@ def extract_supported_filenames(filenames):
 
 
 def extract_video_from_path(video_path):
-    all_files = os.listdir(video_path)
+    """Extracts video file names with annotations.
 
+    Args:
+        video_path (str): Path to directory with video files
+
+    Returns:
+        dict: Where: key - video name, value - annotation name
+    """
+    files_in_directory = os.listdir(video_path)
+
+    # Generator is used for cases with big number of files in directory
     video_files = \
-        [file for file in extract_supported_filenames(all_files)]
+        [file for file in extract_supported_filenames(files_in_directory)]
 
     video_files = video_validator.get_annotations(
         video_path,
         video_files,
-        all_files
+        files_in_directory
     )
     return video_files
