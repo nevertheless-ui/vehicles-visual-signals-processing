@@ -86,7 +86,10 @@ class ChunkWriter:
         for label_class in available_classes:
             class_dir_path = os.path.join(self.output_path, label_class)
 
-            fs.create_dir(class_dir_path, overwrite=True)
+            if os.path.isdir(class_dir_path):
+                pass
+            else:
+                os.mkdir(class_dir_path)
 
 
     def write_chunks(self):
@@ -198,8 +201,7 @@ class ChunkWriter:
         _, image = self.capture.read()
 
         # Box coordinates from two points: (A[ax, ay], B[bx, by])
-        ax, ay, bx, by = \
-            self.__get_main_points_from_coordinates(coordinates)
+        ax, ay, bx, by = coordinates
 
         image_crop = image[ay:by, ax:bx]
 
@@ -233,27 +235,6 @@ class ChunkWriter:
         chunk_has_no_errors = frame_is_valid
 
         return chunk_has_no_errors
-
-
-    @staticmethod
-    def __get_main_points_from_coordinates(coordinates) -> tuple:
-        """Returns coordintates of two points to make correct slice
-        while cropping.
-
-        Args:
-            coordinates (dict): Containes coordinates for tl, tr, bl, br
-
-        Returns:
-            tuple: Tuple (4 pieces) of coordinates in one raw.
-                From this coordinates one can find: A[ax, ay], B[bx, by]
-        """
-        ax = coordinates['tl'][0]
-        ay = coordinates['tl'][1]
-
-        bx = coordinates['br'][0]
-        by = coordinates['br'][1]
-
-        return ax, ay, bx, by
 
 
     @staticmethod
@@ -311,10 +292,12 @@ class ChunkWriter:
         border_v, border_h = \
             get_image_borders(input_image.shape, output_image_resolution)
 
-        output_image = cv2.copyMakeBorder(input_image,
-                                          border_v, border_v,
-                                          border_h, border_h,
-                                          cv2.BORDER_CONSTANT, 0)
+        output_image = cv2.copyMakeBorder(
+            input_image,
+            border_v, border_v,
+            border_h, border_h,
+            cv2.BORDER_CONSTANT, 0
+        )
 
         output_image = cv2.resize(output_image, output_image_resolution)
 
