@@ -7,7 +7,6 @@ import cv2
 from collections import OrderedDict
 
 from utils import constants as c
-from utils import filesystem_tool as fs
 
 
 
