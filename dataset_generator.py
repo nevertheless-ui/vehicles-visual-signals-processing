@@ -23,7 +23,7 @@ class ExtractionTask:
     def __init__(self, import_path, export_path,
                  filename, annotation, overwrite):
         self.source_path = os.path.join(import_path, filename)
-        self.output_path = os.path.join(export_path, f"{filename}_data")
+        self.output_path = export_path
         self.annotation_path = os.path.join(import_path, annotation)
         self.overwrite = overwrite
 
@@ -39,10 +39,6 @@ class ExtractionTask:
             **annotation_parser.get_labels(self.annotation_meta,
                                            c.TARGET_ATTRIBUTES.keys())
         }
-
-
-    def create_output_dir(self):
-        fs.create_dir(self.output_path, c.OVERWRITE)
 
 
     def log_attributes(self):
@@ -118,31 +114,59 @@ def analyze_video(source_path, output_path, file, annotation):
 
 
 def generate_dataset(video_path, output_path):
+    """Runs generator. Analyzes files in 'video_path' and if finds some
+    supported ones (with annotation)
+
+    WARNING: Annotation file must meet the criteria:
+    filename = 'task_{VIDEO_FILE_NAME}_cvat for video 1.1.zip'.
+    This is default archive name in CVAT extraction tool.
+
+    Args:
+        video_path (str): Path to the video files and annotation
+            directory
+        output_path (str): Path to the output directory
+    """
     supported_files = fs.extract_video_from_path(video_path)
 
     for file, annotation in supported_files.items():
         extraction = analyze_video(video_path, output_path, file, annotation)
 
         if extraction.is_supported:
-            extraction.create_output_dir()
-            extraction.script = video_editor.get_script(extraction)
-
-            if c.ENABLE_DEBUG_LOGGER:
-                extraction.log_attributes()
-                logger.debug(f"Writing chunks to: {extraction.output_path}")
-
-            writer_report = video_writer.start_writing_video_chunks(
-                source=extraction.source_path,
-                output=extraction.output_path,
-                script=extraction.script,
-                logger=logger
-            )
-
-            log_writer_report(writer_report)
+            export_chunks_from_extraction(extraction)
 
         else:
             if c.ENABLE_DEBUG_LOGGER:
                 logger.debug("No supported labels for extraction")
+
+
+def export_chunks_from_extraction(extraction):
+    """Generate script data, and if script has at least one chunk -
+    creates direc
+
+    Args:
+        extraction ([type]): [description]
+    """
+    extraction.script = video_editor.get_script(extraction)
+
+    chunks_in_script = (len(extraction.script['chunks']) > 0)
+
+    if chunks_in_script:
+        if c.ENABLE_DEBUG_LOGGER:
+            extraction.log_attributes()
+            logger.debug(f"Writing chunks to: {extraction.output_path}")
+
+        writer_report = video_writer.start_writing_video_chunks(
+            source=extraction.source_path,
+            output=extraction.output_path,
+            script=extraction.script,
+            logger=logger
+        )
+
+        log_writer_report(writer_report)
+
+    else:
+        if c.ENABLE_DEBUG_LOGGER:
+            logger.debug("No chunks in script. Skip file...")
 
 
 
@@ -184,7 +208,17 @@ if __name__ == '__main__':
 
     check_settings()
 
+    input_path = c.DATA_DIR_PATH
+    output_path = c.DATASET_DIR_PATH
+    overwrite = c.OVERWRITE
+
+    # Create directory for dataset and
+    output_path = fs.create_dir(
+        path=output_path,
+        overwrite=overwrite
+    )
+
     generate_dataset(
-        video_path=c.DATA_DIR_PATH,
-        output_path=c.DATA_DIR_PATH
+        video_path=input_path,
+        output_path=output_path
     )
