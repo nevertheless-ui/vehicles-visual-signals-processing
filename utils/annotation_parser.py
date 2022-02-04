@@ -14,7 +14,8 @@ from zipfile import ZipFile
 
 
 def get_annotation(annotation_path):
-    assert os.path.isfile(annotation_path), f"No {annotation_path} in directory"
+    assert os.path.isfile(annotation_path), \
+        f"No {annotation_path} in directory"
 
     with ZipFile(annotation_path) as zipfile:
         with zipfile.open('annotations.xml') as xml_file:
@@ -27,15 +28,15 @@ def get_annotation(annotation_path):
 
 
 
-def get_metadata(md):
+def get_metadata(data):
     metadata = {}
 
-    metadata['source_name'] = md['source']
-    metadata['frames_size'] = md['task']['size']
-    metadata['start_frame'] = md['task']['start_frame']
-    metadata['stop_frame'] = md['task']['stop_frame']
-    metadata['video_width'] = md['task']['original_size']['width']
-    metadata['video_height'] = md['task']['original_size']['height']
+    metadata['source_name'] = data['source']
+    metadata['frames_size'] = data['task']['size']
+    metadata['start_frame'] = data['task']['start_frame']
+    metadata['stop_frame'] = data['task']['stop_frame']
+    metadata['video_width'] = data['task']['original_size']['width']
+    metadata['video_height'] = data['task']['original_size']['height']
 
     return metadata
 
