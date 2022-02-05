@@ -59,6 +59,7 @@ class ChunkWriter:
 
         return video_capture
 
+
     @staticmethod
     def __load_codec():
         """Loads codec for MJPG format.
