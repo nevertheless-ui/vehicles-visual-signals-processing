@@ -174,6 +174,7 @@ def generate_dataset(video_path, output_path):
                 logger.debug("No supported labels for extraction")
 
 
+
 def export_chunks_from_extraction(extraction):
     """Generate script data, and if script has at least one chunk -
     creates direc
