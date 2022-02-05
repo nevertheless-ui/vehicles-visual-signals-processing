@@ -22,7 +22,7 @@ from utils import video_writer
 class ExtractionTask:
     def __init__(self, import_path, export_path,
                  filename, annotation, overwrite):
-        """Task for extraction from video file..
+        """Task for extraction from video file.
 
         Args:
             import_path (str): Path to the source directory
@@ -129,7 +129,7 @@ def analyze_video(source_path, output_path, file, annotation):
         annotation (str): Annotation name
 
     Returns:
-        obj: ExtractionTask object
+        obj: ExtractionTask instance
     """
     if c.ENABLE_DEBUG_LOGGER:
         logger.debug(f"Analyzing... {file}")
@@ -180,7 +180,7 @@ def export_chunks_from_extraction(extraction):
     creates direc
 
     Args:
-        extraction ([type]): [description]
+        extraction (obj): ExtractionTask instance
     """
     extraction.script = video_editor.get_script(extraction)
 
