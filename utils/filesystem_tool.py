@@ -35,11 +35,13 @@ def create_dir(path, overwrite=False):
 
         else:
             dir_counter = 0
-            next_path = f"{path}_backup_{str.zfill(str(dir_counter), 4)}"
+            next_path = \
+                f"{path}_backup_{str.zfill(str(dir_counter), 4)}"
 
             while os.path.isdir(next_path):
                     dir_counter += 1
-                    next_path = f"{path}_backup_{str.zfill(str(dir_counter), 4)}"
+                    next_path = \
+                        f"{path}_backup_{str.zfill(str(dir_counter), 4)}"
 
             os.rename(path, next_path)
             os.mkdir(path)
