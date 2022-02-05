@@ -21,7 +21,7 @@ EXTRACTOR_RESOLUTION = (500, 500) # pixels
 #SKIP_FRAME_NUM = 1
 #TARGET_FPS = 30
 SUPPORTED_VIDEO_FORMATS = ('.ts')
-OVERWRITE = True                # Output dataset directory
+OVERWRITE = False  # Output dataset directory
 
 # VIDEO
 TARGET_ATTRIBUTES = {
