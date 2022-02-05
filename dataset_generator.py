@@ -247,7 +247,7 @@ if __name__ == '__main__':
     output_path = c.DATASET_DIR_PATH
     overwrite = c.OVERWRITE
 
-    # Create directory for dataset and
+    # Create directory for dataset
     output_path = fs.create_dir(
         path=output_path,
         overwrite=overwrite
