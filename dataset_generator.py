@@ -22,6 +22,15 @@ from utils import video_writer
 class ExtractionTask:
     def __init__(self, import_path, export_path,
                  filename, annotation, overwrite):
+        """Task for extraction from video file..
+
+        Args:
+            import_path (str): Path to the source directory
+            export_path (str): Path to the dataset directory
+            filename (str): Video file
+            annotation (str): Annotation file
+            overwrite (bool): Overwrite existing dataset or not
+        """
         self.source_path = os.path.join(import_path, filename)
         self.output_path = export_path
         self.annotation_path = os.path.join(import_path, annotation)
@@ -29,6 +38,9 @@ class ExtractionTask:
 
 
     def read_annotation(self):
+        """Reads annotation from annotation files and add it as
+        attributes to the current instance.
+        """
         self.annotation_meta, \
         self.annotation_tracks = \
             annotation_parser.get_annotation(self.annotation_path)
@@ -42,6 +54,9 @@ class ExtractionTask:
 
 
     def log_attributes(self):
+        """Writes all instance attributes to the log file. Cuts off all
+        long attributes. e.g. Chunks
+        """
         long_attributes = ('script', 'info')
 
         for attribute, value in self.__dict__.items():
@@ -77,6 +92,15 @@ class ExtractionTask:
 
 
 def supported_labels_check(extraction):
+    """Checks if extraction contains attributes, which should be
+    extracted to dataset.
+
+    Args:
+        extraction (obj): Instance of ExtractionTask
+
+    Returns:
+        bool: If annotation exists - True, else - False
+    """
     extraction_status = False
     target_labels = c.TARGET_ATTRIBUTES.keys()
     extraction_labels = extraction.info['labels'].keys()
@@ -96,6 +120,17 @@ def supported_labels_check(extraction):
 
 
 def analyze_video(source_path, output_path, file, annotation):
+    """Creates extraction task.
+
+    Args:
+        source_path (str): Path to the source directory
+        output_path (str): Path to the dataset directory
+        file (srt): Video name
+        annotation (str): Annotation name
+
+    Returns:
+        obj: ExtractionTask object
+    """
     if c.ENABLE_DEBUG_LOGGER:
         logger.debug(f"Analyzing... {file}")
 
