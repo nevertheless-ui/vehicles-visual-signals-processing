@@ -14,6 +14,14 @@ from zipfile import ZipFile
 
 
 def get_annotation(annotation_path):
+    """Unzips annotation archive and reads its content.
+
+    Args:
+        annotation_path (str): Path to annotation archive
+
+    Returns:
+        tuple: (video_metadata, tracks_data)
+    """
     assert os.path.isfile(annotation_path), \
         f"No {annotation_path} in directory"
 
@@ -29,6 +37,14 @@ def get_annotation(annotation_path):
 
 
 def get_metadata(data):
+    """Converts metadata from CVAT format.
+
+    Args:
+        data (OrderedDict): CVAT annotation
+
+    Returns:
+        dict: Annotation metadata
+    """
     metadata = {}
 
     metadata['source_name'] = data['source']
@@ -43,8 +59,16 @@ def get_metadata(data):
 
 
 def get_trackdata(tracks):
-    trackdata = {}
-    tracks_size = {}
+    """Converts CVAT track data.
+
+    Args:
+        tracks (OrderedDict): CVAT track data
+
+    Returns:
+        dict: Data of all tracks
+    """
+    trackdata, tracks_size = \
+        {}, {}
 
     trackdata['tracks_number'] = len(tracks)
 
@@ -58,6 +82,15 @@ def get_trackdata(tracks):
 
 
 def get_labels(metadata, target_labels):
+    """Reads labels from annotation metadata
+
+    Args:
+        metadata (dict): Annotation metadata
+        target_labels (dict): Labels which is needed to extract
+
+    Returns:
+        dict: {'labels':labeldata}
+    """
     labeldata = {}
 
     for label in metadata['task']['labels']:
@@ -70,11 +103,21 @@ def get_labels(metadata, target_labels):
 
         labeldata[label_name] = tuple(attributes)
 
-    return {'labels':labeldata}
+    labels = {'labels':labeldata}
+
+    return labels
 
 
 
 def get_attributes(label_data):
+    """Reads all attributes of label.
+
+    Args:
+        label_data (dict): List of label attributes
+
+    Returns:
+        list: List of all attributes
+    """
     attributes = []
 
     if label_data['attributes'] is not None:
