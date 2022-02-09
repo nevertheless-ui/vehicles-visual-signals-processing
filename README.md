@@ -1,7 +1,5 @@
 # vehicles-visual-signals-processing
-#### WARNING: This readme is outdated at this moment. New features will be added shortly.
 
-Will be updated after code refactoring and adding new features!
 Project for vehicles signals recognition for Master Degree Paper, Russia, Moscow, MISIS 2021-2022
 #### - Python version: 3.9.10
 - Annotation tool: [CVAT](https://github.com/openvinotoolkit/cvat)
@@ -10,33 +8,32 @@ Project for vehicles signals recognition for Master Degree Paper, Russia, Moscow
 
 ### DATASETS
 
-- [Baseline dataset.](https://drive.google.com/file/d/1CFDdmcM0Uq_-6dC8D8aA-VsR2-XPrqdZ/view?usp=sharing)
+- [Baseline dataset.]()
 
-Contains MJPG files with 60 frames each (2 seconds) with 2 classes: tail-lights (227 items) and break-lights (90 items)
+Contains MJPG files with 5 frames each with __ classes: tail-lights (_ items) and break-lights (_ items)
 
 
 ### DATASET COOKBOOK:
 
 To start video chunks from video:
-- python .\utils\extractor.py
+- python dataset_generator.py
 
-Example: [raw_data](https://drive.google.com/file/d/1LLeEocagJBVZa4zk1njnUfN_9wyF0KTc/view?usp=sharing)
+Example: [raw_data]()
 
 Extractor description:
-1. Default directory for input video files: "data\raw_data"
+1. Default directory for input video files: "data\raw_data" (can be changed in .\utils\constants.py)
 2. Natively supported video file format:
-- .TS with 30 FPS value.
+- ".TS" with 30 FPS.
 - Example: "REC25915.ts"
 3. Annotation support type:
 - XML (CVAT v.1.1)
 - Must be track with 2 points
 - Must be placed "as is" in native ZIP archive from CVAT export
 - Must be named natively with CVAT export name
-- Example: "task_rec25915.ts-*-cvat for video 1.1.zip"
-4. Extracted video chunks are placed in DIR named after video file
-- Example: directory name - "REC25915.ts_chunks"
-5. Extractor creates MJPG chunk from each availible track annotation (default chunk duration - 2 seconds)
-- Example: "REC25915.ts_chunk_X_Y.mjpg" (X - track number, Y = chunk number)
+- Example: "task_rec25915.ts_cvat for video 1.1.zip"
+4. Extracted video chunks are placed in new dataset directory
+5. Extractor creates MJPG chunk from each availible track annotation:
+- format: "{file}_{label_name}_{class_type}_{class_name}_tr{track_num}_seq{chunk_num}_fr{frame_num}.mjpg"
 
 
 ### HINTS:
