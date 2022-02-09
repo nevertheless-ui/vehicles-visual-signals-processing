@@ -21,7 +21,7 @@ from utils import video_writer
 
 class ExtractionTask:
     def __init__(self, import_path, export_path,
-                 filename, annotation, overwrite):
+                 filename, annotation, overwrite, mode):
         """Task for extraction from video file.
 
         Args:
@@ -35,6 +35,7 @@ class ExtractionTask:
         self.output_path = export_path
         self.annotation_path = os.path.join(import_path, annotation)
         self.overwrite = overwrite
+        self.mode = mode
 
 
     def read_annotation(self):
@@ -119,7 +120,7 @@ def supported_labels_check(extraction):
 
 
 
-def analyze_video(source_path, output_path, file, annotation):
+def analyze_video(source_path, output_path, file, annotation, mode):
     """Creates extraction task.
 
     Args:
@@ -127,6 +128,7 @@ def analyze_video(source_path, output_path, file, annotation):
         output_path (str): Path to the dataset directory
         file (srt): Video name
         annotation (str): Annotation name
+        mode (str): 'sequence' or 'singleshot'
 
     Returns:
         obj: ExtractionTask instance
@@ -139,7 +141,8 @@ def analyze_video(source_path, output_path, file, annotation):
         output_path,
         file,
         annotation,
-        c.OVERWRITE
+        c.OVERWRITE,
+        mode
     )
     extraction.read_annotation()
     extraction.is_supported = supported_labels_check(extraction)
@@ -148,7 +151,7 @@ def analyze_video(source_path, output_path, file, annotation):
 
 
 
-def generate_dataset(video_path, output_path):
+def generate_dataset(video_path, output_path, mode):
     """Runs generator. Analyzes files in 'video_path' and if finds some
     supported ones (with annotation)
 
@@ -160,11 +163,18 @@ def generate_dataset(video_path, output_path):
         video_path (str): Path to the video files and annotation
             directory
         output_path (str): Path to the output directory
+        mode (str): 'sequence' or 'singleshot'
     """
     supported_files = fs.extract_video_from_path(video_path)
 
     for file, annotation in supported_files.items():
-        extraction = analyze_video(video_path, output_path, file, annotation)
+        extraction = analyze_video(
+            video_path,
+            output_path,
+            file,
+            annotation,
+            mode,
+        )
 
         if extraction.is_supported:
             export_chunks_from_extraction(extraction)
@@ -233,6 +243,10 @@ def check_settings():
     assert isinstance(c.CHUNK_SIZE, int), "Overwrite must be int type"
     assert isinstance(c.OVERWRITE, bool), "Overwrite must be boolean type"
     assert os.path.isdir(c.DATA_DIR_PATH) != False, "Source is not directory"
+    assert c.GENERATOR_MODE in ('sequence', 'singleshot'), "Unknown write mode"
+
+    if c.GENERATOR_MODE == 'sequence':
+        assert c.CHUNK_SIZE > 1 and c.FRAME_STEP > 0, "Wrong chunk size"
 
 
 
@@ -246,6 +260,7 @@ if __name__ == '__main__':
 
     input_path = c.DATA_DIR_PATH
     output_path = c.DATASET_DIR_PATH
+    generator_mode = c.GENERATOR_MODE
     overwrite = c.OVERWRITE
 
     # Create directory for dataset
@@ -256,5 +271,6 @@ if __name__ == '__main__':
 
     generate_dataset(
         video_path=input_path,
-        output_path=output_path
+        output_path=output_path,
+        mode=generator_mode,
     )

@@ -50,8 +50,9 @@ class TrackAnalyzer:
         self.__load_track_info()
         self.__load_track_data()
 
-        self.__add_dynamic_markers()
-        self.__add_static_markers(c.BASE_CLASS)
+        if self.mode == 'sequence':
+            self.__add_dynamic_markers()
+            self.__add_static_markers(c.BASE_CLASS)
 
         # For developing process only
         #self.show_debug()
@@ -61,12 +62,12 @@ class TrackAnalyzer:
         """Debug method to show current instance state
         """
         print(self.track_id)
-        for key, val in self.dynamic_markers.items():
-            print(key, val)
-        for key, val in self.static_markers.items():
-            print(key, val)
-        for key, val in self.sequences.items():
-            print(key, val)
+        for property in (self.dynamic_markers,
+                         self.static_markers,
+                         self.sequences):
+
+            for key, val in property.items():
+                print(key, val)
 
 
     def __len__(self) -> int:
@@ -126,6 +127,7 @@ class TrackAnalyzer:
 
         self.target_attributes = \
             self.settings['target_attributes'][self.track_label]
+        self.mode = self.settings['mode']
 
         for attrib in self.target_attributes:
             self.sequences[attrib] = []
@@ -141,25 +143,28 @@ class TrackAnalyzer:
         - attributes of an object in the box
         """
         for box in self.track_data['box']:
-            if box['@outside'] != '1':
-                attributes = OrderedDict()
-                frame_number = int(box['@frame'])
-                coordinates = self.__get_coordinates(box)
+            try:
+                if box['@outside'] != '1':
+                    attributes = OrderedDict()
+                    frame_number = int(box['@frame'])
+                    coordinates = self.__get_coordinates(box)
 
-                if frame_number > self.last_frame:
-                    self.last_frame = frame_number
+                    if frame_number > self.last_frame:
+                        self.last_frame = frame_number
 
-                if frame_number < self.first_frame:
-                    self.first_frame = frame_number
+                    if frame_number < self.first_frame:
+                        self.first_frame = frame_number
 
-                if 'attribute' in box.keys():
-                    attributes = {x['@name']:x['#text']
-                                  for x in box['attribute']}
+                    if 'attribute' in box.keys():
+                        attributes = {x['@name']:x['#text']
+                                    for x in box['attribute']}
 
-                self.track_frames[frame_number] = {
-                    'coordinates':coordinates,
-                    'attributes':attributes,
-                }
+                    self.track_frames[frame_number] = {
+                        'coordinates':coordinates,
+                        'attributes':attributes,
+                    }
+            except TypeError:
+                pass#print(box['@outside'])
 
 
     @staticmethod
@@ -217,11 +222,11 @@ class TrackAnalyzer:
         previous_attrib_states[c.BASE_CLASS] = None
 
         self.__find_dynamic_markers(previous_attrib_states,
-                                   previous_frame_number)
+                                    previous_frame_number)
 
 
     def __find_dynamic_markers(self, previous_attrib_states,
-                              previous_frame_number):
+                               previous_frame_number):
         """Iterates over frames and mark all suitable markers. Updates
         previous states with current state each step.
 
@@ -384,15 +389,51 @@ class TrackAnalyzer:
             - extend_with_reversed (book): Experimental. Enables adding
                 reversed sequences to augment and extend dataset.
         """
-        enough_frames_in_track = \
-            (len(self.track_frames) >= self.frames_in_chunk)
+        if self.mode == 'singleshot':
+            self.__add_singleshot_sequences_from_attributes()
 
-        if enough_frames_in_track:
-            self.__add_sequences_from_markers(
-                extend_with_reversed,
-                self.dynamic_markers,
-                self.static_markers,
-            )
+        elif self.mode == 'sequence':
+            enough_frames_in_track = \
+                (len(self.track_frames) >= self.frames_in_chunk)
+
+            if enough_frames_in_track:
+                self.__add_sequences_from_markers(
+                    extend_with_reversed,
+                    self.dynamic_markers,
+                    self.static_markers,
+                )
+
+
+    def __add_singleshot_sequences_from_attributes(self):
+        """Simple case where only one shot should be written. Writes
+        sequences but only with lenght of 1. May produce mixing of
+        classes, as currently no support single attribute chech.
+        """
+        # Initialize all
+        self.single_markers = OrderedDict()
+        self.single_markers[c.BASE_CLASS] = OrderedDict()
+        for attrib in self.attributes:
+            if attrib in self.target_attributes:
+                self.single_markers[attrib] = OrderedDict()
+
+        # Collecting all attributes in one pass over all frames
+        # TODO: Add param for mixing classes
+        for frame, metadata in self.track_frames.items():
+            states = self.__add_base_class_attribute(metadata['attributes'])
+
+            coordinates = metadata['coordinates']
+
+            for attrib, state in states.items():
+                state_is_positive = (state == 'true')
+                attrib_is_target = (attrib in self.single_markers.keys())
+
+                if state_is_positive and attrib_is_target:
+                    sequence_frame = OrderedDict()
+                    sequence_frame[frame] = coordinates
+
+                    new_sequence = tuple((attrib, self.mode, sequence_frame))
+                    
+                    self.sequences[attrib].append(new_sequence)
 
 
     def __add_sequences_from_markers(self, extend_with_reversed,
@@ -679,9 +720,13 @@ class TrackAnalyzer:
             Returns:
                 bool: True if arrtib==target_value, else - False
             """
-            if self.track_frames[frame]['attributes'][attrib]==target_value:
-                return True
-            else:
+            try:
+                if self.track_frames[frame]['attributes'][attrib]==target_value:
+                    return True
+                else:
+                    return False
+
+            except KeyError:
                 return False
 
         slice_status = \

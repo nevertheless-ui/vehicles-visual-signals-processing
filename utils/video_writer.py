@@ -154,18 +154,21 @@ class ChunkWriter:
         class_path = os.path.join(self.output_path, chunk['class'])
 
         file = self.source_name
+        extension = 'mjpg'
         label_name = chunk['label']
         class_name = chunk['class']
         class_type = chunk['type']
         track_num = str.zfill(str(chunk['track']), 4)
         chunk_num = str.zfill(str(num), 4)
         frame_num = str.zfill(str(frame_num), 6)
+        if class_type == 'singleshot':
+            extension = 'jpg'
 
         chunk_name = \
             f"{file}_{label_name}_{class_type}_{class_name}_" \
             f"tr{track_num}_seq{chunk_num}_fr{frame_num}"
 
-        chunk_path = os.path.join(class_path, f"{chunk_name}.mjpg")
+        chunk_path = os.path.join(class_path, f"{chunk_name}.{extension}")
 
         return chunk_path
 

@@ -113,6 +113,7 @@ def read_script_settings():
     settings['base_class'] = c.BASE_CLASS
     settings['classes_overlay'] = c.CLASS_OVERLAY
     settings['chunks_size'] = c.CHUNK_SIZE
+    settings['mode'] = c.GENERATOR_MODE
 
     return settings
 
@@ -136,7 +137,9 @@ def get_script(extraction):
     script = {}
 
     script['source_name'] = extraction.info['source_name']
+
     script['script_settings'] = read_script_settings()
+
     script['chunks'] = get_chunks(
         tracks=extraction.annotation_tracks,
         settings=script['script_settings'],
