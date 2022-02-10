@@ -24,16 +24,16 @@ def get_chunks_stats(chunks):
     Returns:
         OrderedDict: Statistics of chunks
     """
-    stats, classes = \
-        OrderedDict(), OrderedDict()
+    stats = OrderedDict()
+    classes = OrderedDict()
 
-    counted_tracks, labels, chunk_classes = \
-        [], [], []
+    counted_tracks = []
+    labels = []
+    chunk_classes = []
 
     for chunk in chunks:
         if chunk['track'] not in counted_tracks:
-            stats['tracks_in_script_total'] = \
-                stats.setdefault('tracks_in_script_total', 0) + 1
+            stats['tracks_in_script_total'] = stats.setdefault('tracks_in_script_total', 0) + 1
             counted_tracks.append(chunk['track'])
 
         if chunk['label'] not in labels:
@@ -42,8 +42,7 @@ def get_chunks_stats(chunks):
         if chunk['class'] not in chunk_classes:
             chunk_classes.append(chunk['class'])
 
-        classes[chunk['class']] = \
-            classes.setdefault(chunk['class'], 0) + 1
+        classes[chunk['class']] = classes.setdefault(chunk['class'], 0) + 1
 
     stats['labels'] = labels
     stats['classes'] = classes
@@ -78,9 +77,8 @@ def get_chunks(tracks, settings, labels, frames_total):
         analyst = TrackAnalyzer(track, settings, labels, frames_total)
         analyst.generate_sequences(extend_with_reversed=c.ADD_REVERSED)
 
-        for attrib_sequences in analyst.sequences.values():
-            for sequence_class, sequence_type, sequence_frames \
-                    in attrib_sequences:
+        for attribute_sequences in analyst.sequences.values():
+            for sequence_class, sequence_type, sequence_frames in attribute_sequences:
                 new_chunk = {
                     'track':analyst.track_id,
                     'label':analyst.track_label,
@@ -106,8 +104,7 @@ def read_script_settings():
         dict: Settings in one object
     """
     settings = {}
-    labels_and_attributes = \
-        {key:value for (key,value) in c.TARGET_ATTRIBUTES.items()}
+    labels_and_attributes = {key:value for (key,value) in c.TARGET_ATTRIBUTES.items()}
 
     settings['target_attributes'] = labels_and_attributes
     settings['base_class'] = c.BASE_CLASS
@@ -131,8 +128,8 @@ def get_script(extraction):
                'chunks':tuple, 'statistics':dict}
     """
     extraction_status = \
-        extraction.info is not None and \
-        extraction.annotation_tracks is not None
+        (extraction.info is not None) and (extraction.annotation_tracks is not None)
+
     assert extraction_status, "Extraction was not initialized properly"
     script = {}
 
