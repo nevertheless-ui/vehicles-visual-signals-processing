@@ -41,8 +41,11 @@ class TrackAnalyzer:
 
         # Will be used to change sequence generator behaviour
         # BASE_CLASS usually is a static type and more common in track
-        self.dynamic_types = ('start_frame', 'end_frame')
-        self.static_types = ('static_frame')
+        self.activation_name = c.ACTIVATION_NAME
+        self.deactivation_name = c.DEACTIVATION_NAME
+        self.static_name = c.STATIC_NAME
+        self.dynamic_types = (self.activation_name, self.deactivation_name)
+        self.static_types = (self.static_name)
 
         self.sequences = OrderedDict()
 
@@ -54,7 +57,7 @@ class TrackAnalyzer:
             self.__add_dynamic_markers()
             self.__add_static_markers(c.BASE_CLASS)
 
-        self.show_debug()                 # For developing process only
+        #self.show_debug()                 # For developing process only
 
 
     def generate_sequences(self, extend_with_reversed):
@@ -183,7 +186,7 @@ class TrackAnalyzer:
                         'attributes':attributes,
                     }
             except TypeError:
-                pass#print(box['@outside'])
+                pass
 
 
     @staticmethod
@@ -386,22 +389,22 @@ class TrackAnalyzer:
         current_is_true = (state == 'true')
         current_is_false = (state == 'false')
 
-        # Markers type conditions
-        first_frame = no_previous and current_is_true
-        last_frame = is_last_frame and current_is_true
-        start_frame = previous_is_false and current_is_true
-        end_frame = previous_is_true and current_is_false
-        cut_frame = previous_is_true and current_is_true and track_with_cuts
+        # Markers type conditions - all 5 types of outcomes
+        first_frame = (no_previous and current_is_true)
+        last_frame = (is_last_frame and current_is_true)
+        start_frame = (previous_is_false and current_is_true)
+        end_frame = (previous_is_true and current_is_false)
+        cut_frame = (previous_is_true and current_is_true and track_with_cuts)
 
         if first_frame or start_frame:
-            self.dynamic_markers[attribute][frame_number] = 'start_frame'
+            self.dynamic_markers[attribute][frame_number] = self.activation_name
         elif cut_frame:
-            self.dynamic_markers[attribute][frame_number - 1] = 'end_frame'
-            self.dynamic_markers[attribute][frame_number] = 'start_frame'
+            self.dynamic_markers[attribute][frame_number - 1] = self.deactivation_name
+            self.dynamic_markers[attribute][frame_number] = self.activation_name
         elif end_frame:
-            self.dynamic_markers[attribute][frame_number - 1] = 'end_frame'
+            self.dynamic_markers[attribute][frame_number - 1] = self.deactivation_name
         elif last_frame:
-            self.dynamic_markers[attribute][frame_number] = 'end_frame'
+            self.dynamic_markers[attribute][frame_number] = self.deactivation_name
 
 
     def __add_singleshot_sequences_from_attributes(self):
@@ -451,7 +454,7 @@ class TrackAnalyzer:
         )
 
         for marker_category in general_marker_types:
-            for attrib, frames in marker_category.items():
+            for attribute, frames in marker_category.items():
 
                 for frame, marker_type in frames.items():
 
@@ -459,12 +462,12 @@ class TrackAnalyzer:
                         new_sequence = self.__get_target_sequence(
                             frame,
                             marker_type,
-                            attrib,
+                            attribute,
                             extend_with_reversed,
                         )
 
                     if new_sequence is not None:
-                        self.sequences[attrib].append(new_sequence)
+                        self.sequences[attribute].append(new_sequence)
 
 
     @staticmethod
@@ -507,7 +510,7 @@ class TrackAnalyzer:
         sequence_status = 'failed'
 
         if marker_type in self.dynamic_types:
-            sequence_type = 'dynamic'
+            sequence_type = f'dynamic_{marker_type}'
         elif marker_type in self.static_types:
             sequence_type = 'static'
 
@@ -640,9 +643,9 @@ class TrackAnalyzer:
 
 
     def __evaluate_attrib_frames(self, frame, attribute, marker_type, frames) -> str:
-        """Evaluates dynamic event types. Marker types: 'start_frame'
-        and 'end_frame'. Checks status of activation in the left and
-        the right part of chunk slices.
+        """Evaluates dynamic event types. Marker type names for activation and
+        deactivation are in constants. Checks status of activation in the left
+        and the right part of chunk slices.
 
         Args:
             - frame (int): Frame number
@@ -657,7 +660,7 @@ class TrackAnalyzer:
 
         left_frames, right_frames = self.__get_attrib_slice(marker_type, frame, frames)
 
-        if marker_type=='start_frame':
+        if marker_type==self.activation_name:
             left_is_false, right_is_true = (
                 self.__check_attrib_status(attribute, left_frames, 'false'),
                 self.__check_attrib_status(attribute, right_frames, 'true'),
@@ -666,7 +669,7 @@ class TrackAnalyzer:
             if left_is_false and right_is_true:
                 chunk_status = 'passed'
 
-        elif marker_type=='end_frame':
+        elif marker_type==self.deactivation_name:
             left_is_true, right_is_false = (
                 self.__check_attrib_status(attribute, left_frames, 'true'),
                 self.__check_attrib_status(attribute, right_frames, 'false'),
@@ -678,8 +681,7 @@ class TrackAnalyzer:
         return chunk_status
 
 
-    @staticmethod
-    def __get_attrib_slice(marker_type, frame, frames) -> tuple:
+    def __get_attrib_slice(self, marker_type, frame, frames) -> tuple:
         """Get slices from left and right for status checking.
 
         Args:
@@ -692,7 +694,7 @@ class TrackAnalyzer:
         """
         center_idx = frames.index(frame)
 
-        if marker_type=='end_frame':
+        if marker_type==self.deactivation_name:
             center_idx += 1
 
         left_slice = frames[:center_idx]
@@ -744,11 +746,11 @@ class TrackAnalyzer:
 
         Args:
             attribute (str): Name of the attribute
-            sequence_type (str): 'dynamic' or 'static'
+            sequence_type (str): 'dynamic_{marker}' or 'static'
             sequence_indexes (list): All keyframes of the sequence
             extend_with_reversed (bool): Experimental. Add reversed
-                sequence for 'end_frame' and add it as a 'start_frame'
-            marker_type (str): Type of marker. ex.: 'start_frame'
+                sequence for signal deactivation and add it as an activation
+            marker_type (str): Type of marker. ex.: 'activation'
 
         Returns:
             tuple: (
@@ -764,7 +766,7 @@ class TrackAnalyzer:
         sequence_class = attribute
         sequence_frames = OrderedDict()
 
-        if extend_with_reversed and (marker_type=='end_frame'):
+        if extend_with_reversed and (marker_type==self.deactivation_name):
             sequence_indexes = list(reversed(sequence_indexes))
 
         for frame in sequence_indexes:
@@ -793,7 +795,7 @@ class TrackAnalyzer:
             )
 
             for marker in static_markers:
-                self.static_markers[attribute][marker] = 'static_frame'
+                self.static_markers[attribute][marker] = self.static_name
 
 
     def __get_static_markers(self, attribute_name, dynamic_markers):
@@ -813,11 +815,14 @@ class TrackAnalyzer:
         # Collects pairs of start and end frames
         tmp_interval = []
 
+        # There MUST be activation and deactivation marker on the track
+        # So this iterator combines them into pairs and collect inner centers
+        # for the markers, to skip all overlapping frames and speed up yielding
         for frame, dynamic_type in dynamic_markers.items():
-            if dynamic_type == 'start_frame':
+            if dynamic_type == self.activation_name:
                 tmp_interval.append(frame)
 
-            elif dynamic_type == 'end_frame':
+            elif dynamic_type == self.deactivation_name:
                 tmp_interval.append(frame)
 
                 if len(tmp_interval) == 2:
