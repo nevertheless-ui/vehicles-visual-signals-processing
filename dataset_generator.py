@@ -49,8 +49,7 @@ class ExtractionTask:
         self.info = {
             **annotation_parser.get_metadata(self.annotation_meta),
             **annotation_parser.get_trackdata(self.annotation_tracks),
-            **annotation_parser.get_labels(self.annotation_meta,
-                                           c.TARGET_ATTRIBUTES.keys())
+            **annotation_parser.get_labels(self.annotation_meta, c.TARGET_ATTRIBUTES.keys())
         }
 
 
@@ -68,22 +67,19 @@ class ExtractionTask:
 
                     for info_attribute in value.keys():
                         if info_attribute == 'chunks':
+                            chunks_in_script = len(value[info_attribute])
+
                             log_msg = \
-                                f"{attribute}: {info_attribute}: " \
-                                f"{len(value[info_attribute])} " \
-                                "chunks in script total"
+                                f"{attribute}: {info_attribute}: {chunks_in_script} chunks total"
 
                         elif info_attribute == 'statistics':
                             stats = value[info_attribute].items()
 
                             for stat_name, stat_data in stats:
-                                log_msg = \
-                                    f"{attribute}: {stat_name}: {stat_data}"
+                                log_msg = f"{attribute}: {stat_name}: {stat_data}"
 
                         else:
-                            log_msg = \
-                                f"{attribute}: {info_attribute}: " \
-                                f"{value[info_attribute]}"
+                            log_msg = f"{attribute}: {info_attribute}: {value[info_attribute]}"
 
                         logger.debug(log_msg)
 
@@ -194,9 +190,9 @@ def export_chunks_from_extraction(extraction):
     """
     extraction.script = video_editor.get_script(extraction)
 
-    chunks_in_script = (len(extraction.script['chunks']) > 0)
+    chunks_are_availible_in_script = (len(extraction.script['chunks']) > 0)
 
-    if chunks_in_script:
+    if chunks_are_availible_in_script:
         if c.ENABLE_DEBUG_LOGGER:
             extraction.log_attributes()
             logger.debug(f"Writing chunks to: {extraction.output_path}")
