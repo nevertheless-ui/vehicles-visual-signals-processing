@@ -54,8 +54,29 @@ class TrackAnalyzer:
             self.__add_dynamic_markers()
             self.__add_static_markers(c.BASE_CLASS)
 
-        # For developing process only
-        #self.show_debug()
+        self.show_debug()                 # For developing process only
+
+
+    def generate_sequences(self, extend_with_reversed):
+        """Initialize process of sequence yielding from existing
+        markers.
+
+        Args:
+            - extend_with_reversed (book): Experimental. Enables adding
+                reversed sequences to augment and extend dataset.
+        """
+        if self.mode == 'singleshot':
+            self.__add_singleshot_sequences_from_attributes()
+
+        elif self.mode == 'sequence':
+            enough_frames_in_track = (len(self.track_frames) >= self.frames_in_chunk)
+
+            if enough_frames_in_track:
+                self.__add_sequences_from_markers(
+                    extend_with_reversed,
+                    self.dynamic_markers,
+                    self.static_markers,
+                )
 
 
     def show_debug(self):
@@ -125,8 +146,7 @@ class TrackAnalyzer:
         self.track_label = self.track_data['@label']
         self.attributes = self.labels[self.track_label]
 
-        self.target_attributes = \
-            self.settings['target_attributes'][self.track_label]
+        self.target_attributes = self.settings['target_attributes'][self.track_label]
         self.mode = self.settings['mode']
 
         for attrib in self.target_attributes:
@@ -156,8 +176,7 @@ class TrackAnalyzer:
                         self.first_frame = frame_number
 
                     if 'attribute' in box.keys():
-                        attributes = {x['@name']:x['#text']
-                                    for x in box['attribute']}
+                        attributes = {x['@name']:x['#text'] for x in box['attribute']}
 
                     self.track_frames[frame_number] = {
                         'coordinates':coordinates,
@@ -184,8 +203,11 @@ class TrackAnalyzer:
                 - int: Coordinate of point in some dimension
             """
             assert len(coordinates) == 4, "Too many points"
-            converted_coordinates = \
-                tuple(int(float(coordinate)) for coordinate in coordinates)
+
+            converted_coordinates = tuple(
+                int(float(coordinate)) for coordinate in coordinates
+            )
+
             return converted_coordinates
 
         coordinates = convert_str_to_int(
@@ -221,12 +243,10 @@ class TrackAnalyzer:
         self.dynamic_markers[c.BASE_CLASS] = OrderedDict()
         previous_attrib_states[c.BASE_CLASS] = None
 
-        self.__find_dynamic_markers(previous_attrib_states,
-                                    previous_frame_number)
+        self.__find_dynamic_markers(previous_attrib_states, previous_frame_number)
 
 
-    def __find_dynamic_markers(self, previous_attrib_states,
-                               previous_frame_number):
+    def __find_dynamic_markers(self, previous_attrib_states, previous_frame_number):
         """Iterates over frames and mark all suitable markers. Updates
         previous states with current state each step.
 
@@ -239,14 +259,15 @@ class TrackAnalyzer:
 
         for frame_number, metadata in self.track_frames.items():
 
-            states = self.__add_base_class_attribute(
-                metadata['attributes']
-            )
+            states = self.__add_base_class_attribute(metadata['attributes'])
 
-            self.__evaluate_frame(frame_number, states,
-                                  previous_attrib_states,
-                                  previous_frame_number,
-                                  target_attribs)
+            self.__evaluate_frame(
+                frame_number,
+                states,
+                previous_attrib_states,
+                previous_frame_number,
+                target_attribs
+            )
 
             previous_frame_number = frame_number
             for attribute, state in states.items():
@@ -254,7 +275,7 @@ class TrackAnalyzer:
 
 
     @staticmethod
-    def __add_base_class_attribute(states):
+    def __add_base_class_attribute(attribute_states):
         """As far as 'BASE_CLASS' has no initial attribute - method adds
         base attribute to metadata. (Base class is 'true' when all
         other classes are 'false')
@@ -266,12 +287,14 @@ class TrackAnalyzer:
         Returns:
             - OrderedDict: Updated attribute states of the current frame
         """
-        if not any([state=='true' for state in states.values()]):
-            states[c.BASE_CLASS] = 'true'
-        else:
-            states[c.BASE_CLASS] = 'false'
+        any_attribute_state_is_active = any([state=='true' for state in attribute_states.values()])
 
-        return states
+        if not any_attribute_state_is_active:
+            attribute_states[c.BASE_CLASS] = 'true'
+        else:
+            attribute_states[c.BASE_CLASS] = 'false'
+
+        return attribute_states
 
 
     def __get_attribs_list_with_base_class(self):
@@ -281,10 +304,10 @@ class TrackAnalyzer:
         Returns:
             - list: Target classes with 'BASE_CLASS' name added
         """
-        attribs = [attrib for attrib in self.target_attributes]
-        attribs.append(c.BASE_CLASS)
+        attributes = [attribute for attribute in self.target_attributes]
+        attributes.append(c.BASE_CLASS)
 
-        return attribs
+        return attributes
 
 
     def __evaluate_frame(self, frame_number, states,
@@ -313,22 +336,22 @@ class TrackAnalyzer:
         except TypeError:
             track_with_cuts = False
 
-        for attrib, state in states.items():
-            if attrib in target_attribs:
+        for attribute, state in states.items():
+            if attribute in target_attribs:
 
-                previous_state = previous_attrib_states[attrib]
+                previous_state = previous_attrib_states[attribute]
 
                 # Basic checks for changing of attribute status
                 is_last_frame = (frame_number == self.last_frame)
-                attrib_state_changed = (previous_state != state)
+                attribute_state_changed = (previous_state != state)
 
                 # More common case where nothing changes
-                if not attrib_state_changed and is_last_frame:
+                if not attribute_state_changed and is_last_frame:
                     continue
 
-                elif attrib_state_changed or track_with_cuts or is_last_frame:
+                elif attribute_state_changed or track_with_cuts or is_last_frame:
                     self.__mark_frame(
-                        attrib,
+                        attribute,
                         frame_number,
                         state,
                         previous_state,
@@ -337,7 +360,7 @@ class TrackAnalyzer:
                     )
 
 
-    def __mark_frame(self, attrib, frame_number, state,
+    def __mark_frame(self, attribute, frame_number, state,
                      previous_state, track_with_cuts, is_last_frame):
         """Marks input frame according to initial condition. There are
         4 ways of resolving marking task:
@@ -348,7 +371,7 @@ class TrackAnalyzer:
         4. Current frame is the last one in track
 
         Args:
-            - attrib (str): Name of the marking attribute
+            - attribute (str): Name of the marking attribute
             - frame_number (int): Current name number
             - state (str): 'true' or 'false' (Default CVAT values)
             - previous_state (OrderedDict): Records of attributes states
@@ -371,37 +394,14 @@ class TrackAnalyzer:
         cut_frame = previous_is_true and current_is_true and track_with_cuts
 
         if first_frame or start_frame:
-            self.dynamic_markers[attrib][frame_number] = 'start_frame'
+            self.dynamic_markers[attribute][frame_number] = 'start_frame'
         elif cut_frame:
-            self.dynamic_markers[attrib][frame_number - 1] = 'end_frame'
-            self.dynamic_markers[attrib][frame_number] = 'start_frame'
+            self.dynamic_markers[attribute][frame_number - 1] = 'end_frame'
+            self.dynamic_markers[attribute][frame_number] = 'start_frame'
         elif end_frame:
-            self.dynamic_markers[attrib][frame_number - 1] = 'end_frame'
+            self.dynamic_markers[attribute][frame_number - 1] = 'end_frame'
         elif last_frame:
-            self.dynamic_markers[attrib][frame_number] = 'end_frame'
-
-
-    def generate_sequences(self, extend_with_reversed):
-        """Initialize process of sequence yielding from existing
-        markers.
-
-        Args:
-            - extend_with_reversed (book): Experimental. Enables adding
-                reversed sequences to augment and extend dataset.
-        """
-        if self.mode == 'singleshot':
-            self.__add_singleshot_sequences_from_attributes()
-
-        elif self.mode == 'sequence':
-            enough_frames_in_track = \
-                (len(self.track_frames) >= self.frames_in_chunk)
-
-            if enough_frames_in_track:
-                self.__add_sequences_from_markers(
-                    extend_with_reversed,
-                    self.dynamic_markers,
-                    self.static_markers,
-                )
+            self.dynamic_markers[attribute][frame_number] = 'end_frame'
 
 
     def __add_singleshot_sequences_from_attributes(self):
@@ -412,28 +412,28 @@ class TrackAnalyzer:
         # Initialize all
         self.single_markers = OrderedDict()
         self.single_markers[c.BASE_CLASS] = OrderedDict()
-        for attrib in self.attributes:
-            if attrib in self.target_attributes:
-                self.single_markers[attrib] = OrderedDict()
+        for attribute in self.attributes:
+            if attribute in self.target_attributes:
+                self.single_markers[attribute] = OrderedDict()
 
         # Collecting all attributes in one pass over all frames
         # TODO: Add param for mixing classes
         for frame, metadata in self.track_frames.items():
-            states = self.__add_base_class_attribute(metadata['attributes'])
+            attribute_states = self.__add_base_class_attribute(metadata['attributes'])
 
             coordinates = metadata['coordinates']
 
-            for attrib, state in states.items():
+            for attribute, state in attribute_states.items():
                 state_is_positive = (state == 'true')
-                attrib_is_target = (attrib in self.single_markers.keys())
+                attribute_is_target = (attribute in self.single_markers.keys())
 
-                if state_is_positive and attrib_is_target:
+                if state_is_positive and attribute_is_target:
                     sequence_frame = OrderedDict()
                     sequence_frame[frame] = coordinates
 
-                    new_sequence = tuple((attrib, self.mode, sequence_frame))
-                    
-                    self.sequences[attrib].append(new_sequence)
+                    new_sequence = tuple((attribute, self.mode, sequence_frame))
+
+                    self.sequences[attribute].append(new_sequence)
 
 
     def __add_sequences_from_markers(self, extend_with_reversed,
@@ -487,8 +487,7 @@ class TrackAnalyzer:
         return tuple(supported_marker_types)
 
 
-    def __get_target_sequence(self, frame, marker_type,
-                              attrib, extend_with_reversed) -> tuple:
+    def __get_target_sequence(self, frame, marker_type, attribute, extend_with_reversed) -> tuple:
         """Creates new sequence from the initial frame. Calculates all
         subframes, test its availibility, doublecheck attribute status
         and collects metadata.
@@ -496,7 +495,7 @@ class TrackAnalyzer:
         Args:
             - frame (int): Frame number
             - marker_type (str): Dynamic or static type
-            - attrib (str): Attribute name for the sequence
+            - attribute (str): Attribute name for the sequence
             - extend_with_reversed (book): Experimental. Enables adding
                 reversed sequences to augment and extend dataset.
 
@@ -512,21 +511,21 @@ class TrackAnalyzer:
         elif marker_type in self.static_types:
             sequence_type = 'static'
 
+        # Testing frames
         sequence_indexes = self.__get_chunk_indexes(frame)
-        indexes_are_avalible = \
-            self.__test_frames_availibility(sequence_indexes)
+        indexes_are_avalible = self.__test_frames_availibility(sequence_indexes)
 
         if indexes_are_avalible:
             sequence_status = self.__test_frame_status_integrity(
                 frame,
-                attrib,
+                attribute,
                 marker_type,
                 sequence_indexes,
             )
 
         if sequence_status == 'passed':
             new_sequence = self.__get_sequence(
-                attrib,
+                attribute,
                 sequence_type,
                 sequence_indexes,
                 extend_with_reversed,
@@ -560,8 +559,9 @@ class TrackAnalyzer:
             Returns:
                 tuples: Sorted indexes of the appendixes
             """
-            left, right = \
-                [], []
+            left = []
+            right = []
+
             for i in range(1, steps + 1):
                 left.append(frame + (c.FRAME_STEP * -i))
                 right.append(frame + (c.FRAME_STEP * i))
@@ -571,6 +571,7 @@ class TrackAnalyzer:
         added_size = c.CHUNK_SIZE - 1
         steps = int(added_size / 2)
         left, right = get_shifts(frame, steps)
+
         frames = left + [frame] + right
 
         return frames
@@ -586,10 +587,13 @@ class TrackAnalyzer:
         Returns:
             bool: True if all frames in track data, else - False
         """
-        return all([(idx in self.track_frames.keys()) for idx in frames])
+        all_indexes_are_availible_in_track_status = \
+            all([(idx in self.track_frames.keys()) for idx in frames])
+
+        return all_indexes_are_availible_in_track_status
 
 
-    def __test_frame_status_integrity(self, frame, attrib,
+    def __test_frame_status_integrity(self, frame, attribute,
                                       marker_type, frames):
         """Final check of all conditions of a good chunk. There are:
         - For dynamic types: left and right frames have different state
@@ -597,7 +601,7 @@ class TrackAnalyzer:
 
         Args:
             - frame (int): Frame number
-            - attrib (str): Attribute name
+            - attribute (str): Attribute name
             - marker_type (str): 'dynamic' or 'static' type
             - frames (list): Chunk with all subframes
 
@@ -611,17 +615,17 @@ class TrackAnalyzer:
 
         subframes = list(range(start_frame, end_frame + 1, 1))
 
-        if attrib != c.BASE_CLASS:
+        if attribute != c.BASE_CLASS:
             sequence_status = self.__evaluate_attrib_frames(
                 frame,
-                attrib,
+                attribute,
                 marker_type,
                 subframes
             )
 
-        elif attrib == c.BASE_CLASS:
+        elif attribute == c.BASE_CLASS:
             status_is_stable = self.__check_attrib_status(
-                attrib,
+                attribute,
                 subframes,
                 'true'
             )
@@ -635,15 +639,14 @@ class TrackAnalyzer:
         return sequence_status
 
 
-    def __evaluate_attrib_frames(self, frame, attrib,
-                                 marker_type, frames) -> str:
+    def __evaluate_attrib_frames(self, frame, attribute, marker_type, frames) -> str:
         """Evaluates dynamic event types. Marker types: 'start_frame'
         and 'end_frame'. Checks status of activation in the left and
         the right part of chunk slices.
 
         Args:
             - frame (int): Frame number
-            - attrib (str): Attribute name
+            - attribute (str): Attribute name
             - marker_type (str): 'dynamic' or 'static' type
             - frames (list): Chunk with all subframes
 
@@ -652,13 +655,12 @@ class TrackAnalyzer:
         """
         chunk_status = 'failed'
 
-        left_frames, right_frames = \
-                self.__get_attrib_slice(marker_type, frame, frames)
+        left_frames, right_frames = self.__get_attrib_slice(marker_type, frame, frames)
 
         if marker_type=='start_frame':
             left_is_false, right_is_true = (
-                self.__check_attrib_status(attrib, left_frames, 'false'),
-                self.__check_attrib_status(attrib, right_frames, 'true'),
+                self.__check_attrib_status(attribute, left_frames, 'false'),
+                self.__check_attrib_status(attribute, right_frames, 'true'),
             )
 
             if left_is_false and right_is_true:
@@ -666,8 +668,8 @@ class TrackAnalyzer:
 
         elif marker_type=='end_frame':
             left_is_true, right_is_false = (
-                self.__check_attrib_status(attrib, left_frames, 'true'),
-                self.__check_attrib_status(attrib, right_frames, 'false'),
+                self.__check_attrib_status(attribute, left_frames, 'true'),
+                self.__check_attrib_status(attribute, right_frames, 'false'),
             )
 
             if left_is_true and right_is_false:
@@ -699,8 +701,7 @@ class TrackAnalyzer:
         return left_slice, right_slice
 
 
-    def __check_attrib_status(self, attrib,
-                              frames, target_value) -> bool:
+    def __check_attrib_status(self, attrib, frames, target_value) -> bool:
         """Checks if all frames have target attibute status.
 
         Args:
@@ -721,7 +722,10 @@ class TrackAnalyzer:
                 bool: True if arrtib==target_value, else - False
             """
             try:
-                if self.track_frames[frame]['attributes'][attrib]==target_value:
+                attribute_has_same_value = \
+                    self.track_frames[frame]['attributes'][attrib]==target_value
+
+                if attribute_has_same_value:
                     return True
                 else:
                     return False
@@ -729,18 +733,17 @@ class TrackAnalyzer:
             except KeyError:
                 return False
 
-        slice_status = \
-            all([compare_frame_status_with_target(frame) for frame in frames])
+        slice_status = all([compare_frame_status_with_target(frame) for frame in frames])
 
         return slice_status
 
 
-    def __get_sequence(self, attrib, sequence_type, sequence_indexes,
+    def __get_sequence(self, attribute, sequence_type, sequence_indexes,
                        extend_with_reversed, marker_type) -> tuple:
         """Collects validated sequence data in one tuple.
 
         Args:
-            attrib (str): Name of the attribute
+            attribute (str): Name of the attribute
             sequence_type (str): 'dynamic' or 'static'
             sequence_indexes (list): All keyframes of the sequence
             extend_with_reversed (bool): Experimental. Add reversed
@@ -758,7 +761,7 @@ class TrackAnalyzer:
             )
         """
         assert sequence_type is not None
-        sequence_class = attrib
+        sequence_class = attribute
         sequence_frames = OrderedDict()
 
         if extend_with_reversed and (marker_type=='end_frame'):
@@ -772,34 +775,34 @@ class TrackAnalyzer:
         return new_sequence
 
 
-    def __add_static_markers(self, *static_attribs):
+    def __add_static_markers(self, *static_attributes):
         """Iterates over static attributes and initialize process of
         collecting static markers based on its dynamic markers.
 
         Args:
-            - *static_attribs (tuples): Names of static attributes
+            - *static_attributes (tuples): Names of static attributes
         """
         self.static_markers = OrderedDict()
 
-        for attrib in static_attribs:
-            self.static_markers[attrib] = OrderedDict()
+        for attribute in static_attributes:
+            self.static_markers[attribute] = OrderedDict()
 
             static_markers = self.__get_static_markers(
-                attrib_name=attrib,
-                dynamic_markers=self.dynamic_markers[attrib],
+                attribute_name=attribute,
+                dynamic_markers=self.dynamic_markers[attribute],
             )
 
             for marker in static_markers:
-                self.static_markers[attrib][marker] = 'static_frame'
+                self.static_markers[attribute][marker] = 'static_frame'
 
 
-    def __get_static_markers(self, attrib_name, dynamic_markers):
+    def __get_static_markers(self, attribute_name, dynamic_markers):
         """Iterate over attribute markers and combines start and end
         frames. After combining - tests availibility and adds to markers
         list.
 
         Args:
-            - attrib_name (str): Name of the attribute
+            - attribute_name (str): Name of the attribute
             - dynamic_markers (OrderedDict): Dynamic markers for attrib
 
         Returns:
@@ -819,7 +822,7 @@ class TrackAnalyzer:
 
                 if len(tmp_interval) == 2:
                     static_range = self.__get_static_interval(
-                        attrib_name,
+                        attribute_name,
                         tmp_interval,
                     )
 
@@ -830,7 +833,7 @@ class TrackAnalyzer:
         return static_markers
 
 
-    def __get_static_interval(self, attrib_name, interval):
+    def __get_static_interval(self, attribute_name, interval):
         """Analyze input interval and return keyframes for static
         markers. If inteval is too short - returns empty list.
 
@@ -844,16 +847,18 @@ class TrackAnalyzer:
         details of this process.
 
         Args:
-            attrib_name (str): Name of the attribute (e.g. 'idle')
+            attribute_name (str): Name of the attribute (e.g. 'idle')
             interval (list): [start_frame_index, end_frame_index]
 
         Returns:
             list: Indexes of frames with shifting.
         """
-        assert len(interval) == 2, f"Wrong interval shape of {attrib_name}"
-        start_idx, end_idx = \
-            interval[0], interval[1]
-        assert start_idx < end_idx, f"Mixed indexes at {attrib_name}"
+        assert len(interval) == 2, f"Wrong interval shape of {attribute_name}"
+
+        start_idx = interval[0]
+        end_idx = interval[1]
+
+        assert start_idx < end_idx, f"Mixed indexes at {attribute_name}"
 
         static_range = []
         range_is_valid = False
@@ -863,13 +868,13 @@ class TrackAnalyzer:
 
         # Check frames from full interval to avoid errors in borders
         frames_status_is_stable = self.__check_attrib_status(
-            attrib_name,
+            attribute_name,
             interval_frames,
             target_value='true'
         )
 
         interval_has_enough_frames_for_slicing = \
-            interval_size >= self.frames_in_chunk * c.CHUNK_BORDER_RATIO
+            (interval_size >= (self.frames_in_chunk * c.CHUNK_BORDER_RATIO))
 
         if interval_has_enough_frames_for_slicing:
             interval_frames, interval_size = \
@@ -907,7 +912,7 @@ class TrackAnalyzer:
         Returns:
             tuple: (all sliced frames, size of the resulting interval)
         """
-        cut_size = self.__get_side_size_for_chunk() * c.CHUNK_BORDER_RATIO
+        cut_size = (self.__get_side_size_for_chunk() * c.CHUNK_BORDER_RATIO)
 
         interval_frames = interval_frames[cut_size:-cut_size]
         interval_size = len(interval_frames)
