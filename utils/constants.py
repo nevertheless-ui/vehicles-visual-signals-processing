@@ -21,8 +21,8 @@ EXTRACTOR_RESOLUTION = (500, 500) # pixels
 #SKIP_FRAME_NUM = 1
 #TARGET_FPS = 30
 SUPPORTED_VIDEO_FORMATS = ('.ts')
-OVERWRITE = False  # Output dataset directory
-GENERATOR_MODE = 'singleshot' # 'sequence' or 'singleshot'
+OVERWRITE = True  # Rewrite output dataset directory or backup it
+GENERATOR_MODE = 'sequence' # 'sequence' or 'singleshot'
 
 # VIDEO
 TARGET_ATTRIBUTES = {
@@ -33,13 +33,16 @@ TARGET_ATTRIBUTES = {
         'turn_right',
     )
 }
+ACTIVATION_NAME = 'activation'
+DEACTIVATION_NAME = 'deactivation'
+STATIC_NAME = 'static'
 BASE_CLASS = 'idle'
-CHUNK_SIZE = 1 # frames - MUST BE ODD
-FRAME_STEP = 0 # frames shift
+CHUNK_SIZE = 5 # frames - MUST BE ODD
+FRAME_STEP = 3 # frames shift
 CHUNK_BORDER_RATIO = 2 # Slice border multiplyer to make bigger for dynamic markers
 CLASS_OVERLAY = True  # Same frames can be used for different classes
 CLASS_BALANCED = False # Balance classes?
-ADD_REVERSED=False # EXPERIMENTAL. Try to reverse frames to augment data
+ADD_REVERSED = False # EXPERIMENTAL. Try to reverse frames to augment data
 
 
 # ANNOTATION

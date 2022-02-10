@@ -439,8 +439,7 @@ class TrackAnalyzer:
                     self.sequences[attribute].append(new_sequence)
 
 
-    def __add_sequences_from_markers(self, extend_with_reversed,
-                                     *general_marker_types):
+    def __add_sequences_from_markers(self, extend_with_reversed, *general_marker_types):
         """Iterates over dynamic and static markers and append new
         sequences.
 
@@ -510,7 +509,7 @@ class TrackAnalyzer:
         sequence_status = 'failed'
 
         if marker_type in self.dynamic_types:
-            sequence_type = f'dynamic_{marker_type}'
+            sequence_type = f'dynamic'
         elif marker_type in self.static_types:
             sequence_type = 'static'
 
@@ -763,7 +762,7 @@ class TrackAnalyzer:
             )
         """
         assert sequence_type is not None
-        sequence_class = attribute
+        sequence_class = f"{attribute}_{marker_type}"
         sequence_frames = OrderedDict()
 
         if extend_with_reversed and (marker_type==self.deactivation_name):
