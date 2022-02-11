@@ -42,7 +42,7 @@ class ChunkWriter:
 
         self.__create_subdirs_for_each_class()
 
-
+    
     def write_chunks(self):
         """Iterate over all chunks in script and write it to the output.
         Writing process stages:
