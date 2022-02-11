@@ -43,6 +43,74 @@ class ChunkWriter:
         self.__create_subdirs_for_each_class()
 
 
+    def write_chunks(self):
+        """Iterate over all chunks in script and write it to the output.
+        Writing process stages:
+        1. Creates output file
+        2. Add frames from script sequence
+        3. Test chunk integrity
+        4. If passed - continue. Else - delete chunk.
+        """
+        self.valid_chunks_counter = 0
+
+        for num, chunk in enumerate(self.chunks):
+            try:
+                center_index = (c.CHUNK_SIZE - 1) // 2
+                frame_num = list(chunk['sequence'].keys())[center_index]
+            except IndexError:
+                frame_num = 'ERROR'
+
+            chunk_path = self.__get_chunk_path(num, frame_num, chunk)
+            log_msg = f"Writing: {chunk_path}"
+
+            output = self.__get_output(chunk_path)
+
+            for frame, coordinates in chunk['sequence'].items():
+                self.__add_frame_to_chunk(output, frame, coordinates)
+
+            output.release()
+
+            chunk_validation_passed = self.__validate_chunk(chunk_path)
+
+            if not chunk_validation_passed:
+                self.broken_chunks.append(chunk_path)
+
+                try:
+                    os.remove(chunk_path)
+                    log_msg = f"WARNING: BROKEN_CHUNK: {chunk_path}"
+                except OSError:
+                    log_msg = f"FAILED TO REMOVE: {chunk_path}"
+                    pass
+
+            else:
+                self.valid_chunks_counter += 1
+
+            if c.ENABLE_DEBUG_LOGGER:
+                self.logger.debug(log_msg)
+
+
+    def get_report(self):
+            """Creates report from writer. Report content:
+            - valid chunks counter
+            - broken chunks counter
+            - list of broken chunks
+
+            Returns:
+                OrderedDict: Availible keys: [
+                    'Valid chunks total',
+                    'Broken chunks total',
+                    'Broken chunks list'
+                    ]
+            """
+            report = OrderedDict()
+
+            report['Valid chunks total'] = self.valid_chunks_counter
+            report['Broken chunks total'] = len(self.broken_chunks)
+            report['Broken chunks list'] = self.broken_chunks
+
+            return report
+
+
     @staticmethod
     def __read_video(source_path):
         """Reads video source file.
@@ -90,52 +158,6 @@ class ChunkWriter:
                 pass
             else:
                 os.mkdir(class_dir_path)
-
-
-    def write_chunks(self):
-        """Iterate over all chunks in script and write it to the output.
-        Writing process stages:
-        1. Creates output file
-        2. Add frames from script sequence
-        3. Test chunk integrity
-        4. If passed - continue. Else - delete chunk.
-        """
-        self.valid_chunks_counter = 0
-
-        for num, chunk in enumerate(self.chunks):
-            try:
-                center_index = (c.CHUNK_SIZE - 1) // 2
-                frame_num = list(chunk['sequence'].keys())[center_index]
-            except IndexError:
-                frame_num = 'ERROR'
-
-            chunk_path = self.__get_chunk_path(num, frame_num, chunk)
-            log_msg = f"Writing: {chunk_path}"
-
-            output = self.__get_output(chunk_path)
-
-            for frame, coordinates in chunk['sequence'].items():
-                self.__add_frame_to_chunk(output, frame, coordinates)
-
-            output.release()
-
-            chunk_validation_passed = self.__validate_chunk(chunk_path)
-
-            if not chunk_validation_passed:
-                self.broken_chunks.append(chunk_path)
-
-                try:
-                    os.remove(chunk_path)
-                    log_msg = f"WARNING: BROKEN_CHUNK: {chunk_path}"
-                except OSError:
-                    log_msg = f"FAILED TO REMOVE: {chunk_path}"
-                    pass
-
-            else:
-                self.valid_chunks_counter += 1
-
-            if c.ENABLE_DEBUG_LOGGER:
-                self.logger.debug(log_msg)
 
 
     def __get_chunk_path(self, num, frame_num, chunk):
@@ -305,29 +327,6 @@ class ChunkWriter:
         output_image = cv2.resize(output_image, output_image_resolution)
 
         return output_image
-
-
-    def get_report(self):
-        """Creates report from writer. Report content:
-        - valid chunks counter
-        - broken chunks counter
-        - list of broken chunks
-
-        Returns:
-            OrderedDict: Availible keys: [
-                'Valid chunks total',
-                'Broken chunks total',
-                'Broken chunks list'
-                ]
-        """
-        report = OrderedDict()
-
-        report['Valid chunks total'] = self.valid_chunks_counter
-        report['Broken chunks total'] = len(self.broken_chunks)
-        report['Broken chunks list'] = self.broken_chunks
-
-        return report
-
 
 
 
