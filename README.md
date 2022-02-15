@@ -12,6 +12,8 @@ Project for vehicles signals recognition for Master Degree Paper, Russia, Moscow
 
 Contains MJPG files with 5 frames each with __ classes: tail-lights (_ items) and break-lights (_ items)
 
+Seqences example(https://github.com/nevertheless-ui/vehicles-visual-signals-processing/blob/main/images/dataset_sequence_example.jpg)
+
 
 ### DATASET COOKBOOK:
 
