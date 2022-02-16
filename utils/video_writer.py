@@ -28,8 +28,16 @@ class ChunkWriter:
 
         self.script = script
         self.logger = logger
+        self.mode = self.script['script_settings']['mode']
 
-        self.fps = c.CHUNK_SIZE
+        if self.mode == 'singleshot':
+            self.fps = 1
+            self.chunk_size = 1
+
+        elif self.mode == 'sequence':
+            self.chunk_size = self.script['script_settings']['chunk_size']
+            self.fps = self.chunk_size
+
         self.resolution = c.EXTRACTOR_RESOLUTION
         self.broken_chunks = []
 
@@ -42,7 +50,7 @@ class ChunkWriter:
 
         self.__create_subdirs_for_each_class()
 
-    
+
     def write_chunks(self):
         """Iterate over all chunks in script and write it to the output.
         Writing process stages:
@@ -55,8 +63,13 @@ class ChunkWriter:
 
         for num, chunk in enumerate(self.chunks):
             try:
-                center_index = (c.CHUNK_SIZE - 1) // 2
-                frame_num = list(chunk['sequence'].keys())[center_index]
+                if len(chunk['sequence'].keys()) > 3:
+                    center_index = (self.chunk_size - 1) // 2
+                    frame_num = list(chunk['sequence'].keys())[center_index]
+
+                else:
+                    frame_num = list(chunk['sequence'].keys())[0]
+
             except IndexError:
                 frame_num = 'ERROR'
 
@@ -70,9 +83,10 @@ class ChunkWriter:
 
             output.release()
 
-            chunk_validation_passed = self.__validate_chunk(chunk_path)
+            if self.mode == 'sequence':
+                chunk_validation_passed = self.__validate_chunk(chunk_path)
 
-            if not chunk_validation_passed:
+            if self.mode!='singleshot' and not chunk_validation_passed:
                 self.broken_chunks.append(chunk_path)
 
                 try:
@@ -238,8 +252,7 @@ class ChunkWriter:
         output.write(image_crop)
 
 
-    @staticmethod
-    def __validate_chunk(chunk_path) -> bool:
+    def __validate_chunk(self, chunk_path) -> bool:
         """Chunk validator. Tries to read every frame from chunk and
         tests its availibility.
 
@@ -251,7 +264,7 @@ class ChunkWriter:
         """
         capture = cv2.VideoCapture(chunk_path)
 
-        for _ in range(c.CHUNK_SIZE):
+        for _ in range(self.chunk_size):
             frame_is_valid, __ = capture.read()
 
             if not frame_is_valid:
