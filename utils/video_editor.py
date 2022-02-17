@@ -4,9 +4,7 @@ Contains class TrackAnalyzer which generates script for video chunks
 extractions. Each chunk contains data of source, lable, class and
 attributes.
 """
-
 from collections import OrderedDict
-from utils import constants as c
 from utils.track_analyzer import TrackAnalyzer
 
 
@@ -75,7 +73,10 @@ def get_chunks(tracks, settings, labels, frames_total):
 
     for track in tracks:
         analyst = TrackAnalyzer(track, settings, labels, frames_total)
-        analyst.generate_sequences(extend_with_reversed=c.ADD_REVERSED)
+
+        analyst.generate_sequences(
+            extend_with_reversed=settings['extend_with_reversed']
+        )
 
         for attribute_sequences in analyst.sequences.values():
             for sequence_class, sequence_type, sequence_frames in attribute_sequences:
@@ -93,24 +94,21 @@ def get_chunks(tracks, settings, labels, frames_total):
 
 
 
-def read_script_settings():
+def read_script_settings(extraction):
     """Reads CONSTANTS and generate settings for script.
-    - target_attributes
-    - base_class
-    - classes_overlay
-    - chunks_size
 
     Returns:
         dict: Settings in one object
     """
     settings = {}
-    labels_and_attributes = {key:value for (key,value) in c.TARGET_ATTRIBUTES.items()}
+    labels_and_attributes = {key:value for (key,value) in extraction.target_attributes.items()}
 
+    settings['extend_with_reversed'] = extraction.extend_with_reversed
+    settings['classes_overlay'] = extraction.class_overlay
     settings['target_attributes'] = labels_and_attributes
-    settings['base_class'] = c.BASE_CLASS
-    settings['classes_overlay'] = c.CLASS_OVERLAY
-    settings['chunks_size'] = c.CHUNK_SIZE
-    settings['mode'] = c.GENERATOR_MODE
+    settings['chunk_size'] = extraction.chunk_size
+    settings['base_class'] = extraction.base_class
+    settings['mode'] = extraction.mode
 
     return settings
 
@@ -135,7 +133,7 @@ def get_script(extraction):
 
     script['source_name'] = extraction.info['source_name']
 
-    script['script_settings'] = read_script_settings()
+    script['script_settings'] = read_script_settings(extraction)
 
     script['chunks'] = get_chunks(
         tracks=extraction.annotation_tracks,
