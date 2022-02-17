@@ -44,6 +44,7 @@ class ExtractionTask:
         self.chunk_size = c.CHUNK_SIZE
         self.extend_with_reversed = c.ADD_REVERSED
         self.target_attributes = c.TARGET_ATTRIBUTES
+        self.logger_skip_atributes = c.LOGGER_SKIP_ATTRIBUTES
 
 
     def read_annotation(self):
@@ -68,7 +69,7 @@ class ExtractionTask:
         long_attributes = ('script', 'info')
 
         for attribute, value in self.__dict__.items():
-            if attribute not in c.SKIP_ATTRIBUTE:
+            if attribute not in self.logger_skip_atributes:
 
                 # Makes logs shorter. Script contains too much data.
                 if attribute in long_attributes:
@@ -124,7 +125,7 @@ def supported_labels_check(extraction):
 
 
 
-def analyze_video(source_path, output_path, file, annotation, mode):
+def analyze_video(source_path, output_path, file, annotation, overwrite, mode):
     """Creates extraction task.
 
     Args:
@@ -145,7 +146,7 @@ def analyze_video(source_path, output_path, file, annotation, mode):
         output_path,
         file,
         annotation,
-        c.OVERWRITE,
+        overwrite,
         mode
     )
     extraction.read_annotation()
@@ -155,7 +156,7 @@ def analyze_video(source_path, output_path, file, annotation, mode):
 
 
 
-def generate_dataset(video_path, output_path, mode):
+def generate_dataset(video_path, output_path, mode, overwrite):
     """Runs generator. Analyzes files in 'video_path' and if finds some
     supported ones (with annotation)
 
@@ -177,6 +178,7 @@ def generate_dataset(video_path, output_path, mode):
             output_path,
             file,
             annotation,
+            overwrite,
             mode,
         )
 
@@ -333,8 +335,4 @@ if __name__ == '__main__':
         overwrite=overwrite
     )
 
-    generate_dataset(
-        video_path=input_path,
-        output_path=output_path,
-        mode=generator_mode,
-    )
+    generate_dataset(input_path, output_path, generator_mode, overwrite)
