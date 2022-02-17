@@ -9,6 +9,7 @@ MISIS Master Degree Project
 """
 
 import os
+import argparse
 
 from utils import constants as c
 from utils import logging_tool
@@ -36,6 +37,13 @@ class ExtractionTask:
         self.annotation_path = os.path.join(import_path, annotation)
         self.overwrite = overwrite
         self.mode = mode
+
+        # Read internal constants
+        self.base_class = c.BASE_CLASS
+        self.class_overlay = c.CLASS_OVERLAY
+        self.chunk_size = c.CHUNK_SIZE
+        self.extend_with_reversed = c.ADD_REVERSED
+        self.target_attributes = c.TARGET_ATTRIBUTES
 
 
     def read_annotation(self):
@@ -99,12 +107,12 @@ def supported_labels_check(extraction):
         bool: If annotation exists - True, else - False
     """
     extraction_status = False
-    target_labels = c.TARGET_ATTRIBUTES.keys()
+    target_labels = extraction.target_attributes.keys()
     extraction_labels = extraction.info['labels'].keys()
 
     if any(label in extraction_labels for label in target_labels):
 
-        for label, attributes in c.TARGET_ATTRIBUTES.items():
+        for label, attributes in extraction.target_attributes.items():
             if label in extraction_labels:
                 extration_label_attributes = extraction.info['labels'][label]
 
@@ -129,7 +137,7 @@ def analyze_video(source_path, output_path, file, annotation, mode):
     Returns:
         obj: ExtractionTask instance
     """
-    if c.ENABLE_DEBUG_LOGGER:
+    if debug:
         logger.debug(f"Analyzing... {file}")
 
     extraction = ExtractionTask(
@@ -176,7 +184,7 @@ def generate_dataset(video_path, output_path, mode):
             export_chunks_from_extraction(extraction)
 
         else:
-            if c.ENABLE_DEBUG_LOGGER:
+            if debug:
                 logger.debug("No supported labels for extraction")
 
 
@@ -193,7 +201,7 @@ def export_chunks_from_extraction(extraction):
     chunks_are_availible_in_script = (len(extraction.script['chunks']) > 0)
 
     if chunks_are_availible_in_script:
-        if c.ENABLE_DEBUG_LOGGER:
+        if debug:
             extraction.log_attributes()
             logger.debug(f"Writing chunks to: {extraction.output_path}")
 
@@ -207,7 +215,7 @@ def export_chunks_from_extraction(extraction):
         log_writer_report(writer_report)
 
     else:
-        if c.ENABLE_DEBUG_LOGGER:
+        if debug:
             logger.debug("No chunks in script. Skip file...")
 
 
@@ -219,7 +227,7 @@ def log_writer_report(writer_report):
     Args:
         writer_report (OrderedDict): Any key
     """
-    if c.ENABLE_DEBUG_LOGGER:
+    if debug:
 
         for name, value in writer_report.items():
 
@@ -246,18 +254,78 @@ def check_settings():
 
 
 
+def add_custom_arguments(parser):
+    """Adding new optional arguments for parser to
+
+    Args:
+        parser (obj): Empty parser object
+
+    Returns:
+        obj: Parser object with custom arguments
+    """
+    parser.add_argument(
+        '-i',
+        '--input',
+        type=str,
+        default=c.DATA_DIR_PATH,
+        help='Input directory with videos and annotation archive'
+    )
+    parser.add_argument(
+        '-o',
+        '--output',
+        type=str,
+        default=c.DATASET_DIR_PATH,
+        help='Output directory for dataset'
+    )
+    parser.add_argument(
+        '-m',
+        '--mode',
+        type=str,
+        default=c.GENERATOR_MODE,
+        choices=['sequence','singleshot'],
+        help='Dataset generator mode. Sequence for MJPG and singleshot for JPG'
+    )
+    parser.add_argument(
+        '--overwrite',
+        action="store_true",
+        help='Overwrite current dataset directory if exists'
+    )
+    parser.add_argument(
+        '--debug',
+        action="store_true",
+        help='Enable debug log writing'
+    )
+
+    return parser
+
+
+
 if __name__ == '__main__':
     """Main module. Initializes dataset generator.
     """
-    if c.ENABLE_DEBUG_LOGGER:
-        logger = logging_tool.get_logger()
-
     check_settings()
 
-    input_path = c.DATA_DIR_PATH
-    output_path = c.DATASET_DIR_PATH
-    generator_mode = c.GENERATOR_MODE
-    overwrite = c.OVERWRITE
+    parser = argparse.ArgumentParser()
+    parser = add_custom_arguments(parser)
+    args = parser.parse_args()
+
+    input_path = args.input
+    output_path = args.output
+    generator_mode = args.mode
+
+    # Some optional arguments - essential for script OVERWRITE data and DEBUG
+    if args.overwrite:
+        overwrite = args.overwrite
+    else:
+        overwrite = c.OVERWRITE
+
+    if args.debug:
+        debug = args.debug
+    else:
+        debug = c.ENABLE_DEBUG_LOGGER
+
+    if debug:
+        logger = logging_tool.get_logger()
 
     # Create directory for dataset
     output_path = fs.create_dir(
