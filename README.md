@@ -22,13 +22,18 @@ To start video chunks from video:
 >
 > optional arguments:
 > -h, --help            show this help message and exit
+>
 > -i INPUT, --input INPUT
 >                       Input directory with videos and annotation archive
+>
 > -o OUTPUT, --output OUTPUT
 >                       Output directory for dataset
+>
 > -m {sequence,singleshot}, --mode {sequence,singleshot}
 >                       Dataset generator mode. Sequence for MJPG and singleshot for JPG
+>
 > --overwrite           Overwrite current dataset directory if exists
+>
 > --debug               Enable debug log writing
 
 Example: [raw_data]()
