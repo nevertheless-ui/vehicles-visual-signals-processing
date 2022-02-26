@@ -20,30 +20,6 @@ from utils import video_writer
 
 
 
-def supported_labels_check(extraction):
-    """Checks if extraction contains attributes, which should be
-    extracted to dataset.
-
-    Args:
-        extraction (obj): Instance of ExtractionTask
-
-    Returns:
-        bool: If annotation exists - True, else - False
-    """
-    extraction_status = False
-    target_labels = extraction.target_attributes.keys()
-    extraction_labels = extraction.info['labels'].keys()
-    if any(label in extraction_labels for label in target_labels):
-        for label, attributes in extraction.target_attributes.items():
-            if label in extraction_labels:
-                extration_label_attributes = extraction.info['labels'][label]
-                if any(i in extration_label_attributes for i in attributes):
-                    extraction_status = True
-                    break
-    return extraction_status
-
-
-
 def analyze_video(source_path, output_path, file, annotation, overwrite, mode, logger):
     """Creates extraction task.
 
@@ -69,7 +45,7 @@ def analyze_video(source_path, output_path, file, annotation, overwrite, mode, l
         logger,
     )
     extraction.read_annotation()
-    extraction.is_supported = supported_labels_check(extraction)
+    extraction.is_supported = fs.supported_labels_check(extraction)
 
     return extraction
 
