@@ -18,13 +18,11 @@ def search_annotation(video_filename, files_in_directory):
     """
     start_name, end_name = \
         f"{c.CVAT_STARTSWITH}{video_filename.lower()}", c.CVAT_ENDSWITH
-
     annotation = next(
         (file for file in files_in_directory
          if (file.startswith(start_name) and file.endswith(end_name))),
         None,
     )
-
     return annotation
 
 
@@ -44,15 +42,12 @@ def get_annotations(video_path, video_files, files_in_directory):
     assert os.path.isdir(video_path), "Video path is not a directory."
     assert len(video_files) > 0, "No supported video files in directory"
     assert len(video_files) <= len(files_in_directory)
-
     annotations = {}
     for file in video_files:
         annotation = search_annotation(
             file,
             files_in_directory
         )
-
         if annotation is not None:
             annotations[file] = annotation
-
     return annotations
