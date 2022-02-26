@@ -190,27 +190,11 @@ def export_chunks_from_extraction(extraction):
             script=extraction.script,
             logger=logger
         )
-        log_writer_report(writer_report)
+        if debug:
+            logging_tool.log_writer_report(logger, writer_report)
     else:
         if debug:
             logger.debug("No chunks in script. Skip file...")
-
-
-
-def log_writer_report(writer_report):
-    """Writes to log file report from writer. Report is useful for
-    understanding behaviour of writer and catching broken chunks.
-
-    Args:
-        writer_report (OrderedDict): Any key
-    """
-    if debug:
-        for name, value in writer_report.items():
-            if name == 'Broken chunks list' and len(value) > 0:
-                for record in value:
-                    logger.debug(f"Report: {name}: {record}")
-            else:
-                logger.debug(f"Report: {name}: {value}")
 
 
 
