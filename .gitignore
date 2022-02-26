@@ -134,3 +134,4 @@ dmypy.json
 # Project data
 data/
 models/
+runs/

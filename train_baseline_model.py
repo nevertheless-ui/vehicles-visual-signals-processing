@@ -6,8 +6,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
+
 from torchvision import datasets, transforms
 from torch.optim.lr_scheduler import StepLR
+from torch.utils.tensorboard import SummaryWriter
 from utils import logging_tool
 
 
@@ -60,7 +62,7 @@ def train(args, model, device, train_loader, optimizer, epoch, logger):
                 break
 
 
-def test(model, device, test_loader, epoch, logger, models_path):
+def test(model, device, test_loader, epoch, logger, models_path, tensorboard_writer):
     model.eval()
     test_loss = 0
     correct = 0
@@ -75,6 +77,8 @@ def test(model, device, test_loader, epoch, logger, models_path):
     test_loss /= len(test_loader.dataset)
     test_loss = round(test_loss, 4)
     accuracy_state = round(correct / len(test_loader.dataset), 3)
+    tensorboard_writer.add_scalar("Loss/train", test_loss, epoch)
+    #tensorboard_writer.add_scalar("Loss/train", loss, epoch)
 
     with open(os.path.join(models_path, 'training_history.csv'), 'a', newline='') as csvfile:
         spamwriter = csv.writer(csvfile, delimiter=' ',
@@ -117,16 +121,16 @@ def main():
     parser.add_argument('--save-model', action='store_true', default=True,
                         help='For Saving the current Model')
     args = parser.parse_args()
+
     use_cuda = not args.no_cuda and torch.cuda.is_available()
-
     torch.manual_seed(args.seed)
-
     logger = logging_tool.get_logger()
     models_path = f"./models/history/{logger.name}"
     os.makedirs(models_path)
+    tensorboard_writer = SummaryWriter()
+
 
     device = torch.device("cuda" if use_cuda else "cpu")
-
     train_kwargs = {'batch_size': args.batch_size}
     test_kwargs = {'batch_size': args.test_batch_size}
     if use_cuda:
@@ -152,9 +156,11 @@ def main():
     scheduler = StepLR(optimizer, step_size=1, gamma=args.gamma)
 
     model_info_path = os.path.join(models_path, "model_info.txt")
+
     with open(model_info_path, 'a') as model_info_file:
         for param in (model, optimizer):
             model_info_file.write(str(param))
+
     with open(os.path.join(models_path, 'training_history.csv'), 'a', newline='') as csvfile:
         spamwriter = csv.writer(csvfile, delimiter=' ',
                                 quotechar='|', quoting=csv.QUOTE_MINIMAL)
@@ -162,7 +168,7 @@ def main():
 
     for epoch in range(1, args.epochs + 1):
         train(args, model, device, train_loader, optimizer, epoch, logger)
-        test(model, device, test_loader, epoch, logger, models_path)
+        test(model, device, test_loader, epoch, logger, models_path, tensorboard_writer)
         scheduler.step()
 
     if args.save_model:
