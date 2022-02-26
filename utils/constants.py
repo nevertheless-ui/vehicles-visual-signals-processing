@@ -1,16 +1,15 @@
 """
 Project constants
 """
-
-import os
-
 # LOGGER
 ENABLE_DEBUG_LOGGER = True
 LOGGER_FILENAME = 'debug.log'
 # exclude long attributes from logs
-SKIP_ATTRIBUTE = ('annotation_file',
-                  'annotation_meta',
-                  'annotation_tracks')
+LOGGER_SKIP_ATTRIBUTES = (
+    'annotation_file',
+    'annotation_meta',
+    'annotation_tracks',
+)
 
 
 # DATA
@@ -23,6 +22,7 @@ EXTRACTOR_RESOLUTION = (500, 500) # pixels
 SUPPORTED_VIDEO_FORMATS = ('.ts')
 OVERWRITE = True  # Rewrite output dataset directory or backup it
 GENERATOR_MODE = 'sequence' # 'sequence' or 'singleshot'
+
 
 # VIDEO
 TARGET_ATTRIBUTES = {
