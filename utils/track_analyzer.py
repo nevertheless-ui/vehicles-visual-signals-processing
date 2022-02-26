@@ -34,11 +34,9 @@ class TrackAnalyzer:
         self.is_depleted = False
         self.settings = settings
         self.labels = labels
-
         self.last_frame = 0
         self.first_frame = int(frames_total)
         self.frames_in_chunk = self.__get_slice_size_for_chunk()
-
         # Will be used to change sequence generator behaviour
         # BASE_CLASS usually is a static type and more common in track
         self.activation_name = c.ACTIVATION_NAME
@@ -46,13 +44,10 @@ class TrackAnalyzer:
         self.static_name = c.STATIC_NAME
         self.dynamic_types = (self.activation_name, self.deactivation_name)
         self.static_types = (self.static_name)
-
         self.sequences = OrderedDict()
-
         # Loader of the attributes
         self.__load_track_info()
         self.__load_track_data()
-
         if self.mode == 'sequence':
             self.__add_dynamic_markers()
             self.__add_static_markers(c.BASE_CLASS)
@@ -70,10 +65,8 @@ class TrackAnalyzer:
         """
         if self.mode == 'singleshot':
             self.__add_singleshot_sequences_from_attributes()
-
         elif self.mode == 'sequence':
             enough_frames_in_track = (len(self.track_frames) >= self.frames_in_chunk)
-
             if enough_frames_in_track:
                 self.__add_sequences_from_markers(
                     extend_with_reversed,
@@ -89,21 +82,18 @@ class TrackAnalyzer:
         for property in (self.dynamic_markers,
                          self.static_markers,
                          self.sequences):
-
             for key, val in property.items():
                 print(key, val)
 
 
     def __len__(self) -> int:
         """Number of sequences
-
         Returns:
             - int: Number of sequences
         """
         total_chunk_count = 0
         for chunks in self.sequences.values():
             total_chunk_count += len(chunks)
-
         return total_chunk_count
 
 
@@ -122,7 +112,6 @@ class TrackAnalyzer:
             - int: Number of frames in chunk
         """
         slice_size = ((c.CHUNK_SIZE - 1) * c.FRAME_STEP) + 1
-
         return slice_size
 
 
@@ -137,7 +126,6 @@ class TrackAnalyzer:
             - int: Number of frames to trim from left and right
         """
         slice_size = int(((c.CHUNK_SIZE - 1) / 2) * c.FRAME_STEP)
-
         return slice_size
 
 
@@ -148,14 +136,11 @@ class TrackAnalyzer:
         self.track_id = self.track_data['@id']
         self.track_label = self.track_data['@label']
         self.attributes = self.labels[self.track_label]
-
         self.target_attributes = self.settings['target_attributes'][self.track_label]
         self.mode = self.settings['mode']
-
         for attrib in self.target_attributes:
             self.sequences[attrib] = []
         self.sequences[c.BASE_CLASS] = []
-
         self.track_frames = OrderedDict()
 
 
@@ -171,16 +156,12 @@ class TrackAnalyzer:
                     attributes = OrderedDict()
                     frame_number = int(box['@frame'])
                     coordinates = self.__get_coordinates(box)
-
                     if frame_number > self.last_frame:
                         self.last_frame = frame_number
-
                     if frame_number < self.first_frame:
                         self.first_frame = frame_number
-
                     if 'attribute' in box.keys():
                         attributes = {x['@name']:x['#text'] for x in box['attribute']}
-
                     self.track_frames[frame_number] = {
                         'coordinates':coordinates,
                         'attributes':attributes,
@@ -206,17 +187,13 @@ class TrackAnalyzer:
                 - int: Coordinate of point in some dimension
             """
             assert len(coordinates) == 4, "Too many points"
-
             converted_coordinates = tuple(
                 int(float(coordinate)) for coordinate in coordinates
             )
-
             return converted_coordinates
-
         coordinates = convert_str_to_int(
             box['@xtl'], box['@ytl'], box['@xbr'], box['@ybr']
         )
-
         return coordinates
 
 
@@ -234,18 +211,15 @@ class TrackAnalyzer:
         self.dynamic_markers = OrderedDict()
         previous_attrib_states = OrderedDict()
         previous_frame_number = None
-
         for attribute in self.attributes:
             if attribute in self.target_attributes:
                 self.dynamic_markers[attribute] = OrderedDict()
                 previous_attrib_states[attribute] = None
-
         # While 'BASE_CLASS' is static by default, we should process it
         # like the dynamic ones. Markers of 'BASE_CLASS' will be used
         # to make searching pf static ranges easier.
         self.dynamic_markers[c.BASE_CLASS] = OrderedDict()
         previous_attrib_states[c.BASE_CLASS] = None
-
         self.__find_dynamic_markers(previous_attrib_states, previous_frame_number)
 
 
@@ -259,11 +233,8 @@ class TrackAnalyzer:
             - previous_frame_number (int) : Number of previous frame
         """
         target_attribs = self.__get_attribs_list_with_base_class()
-
         for frame_number, metadata in self.track_frames.items():
-
             states = self.__add_base_class_attribute(metadata['attributes'])
-
             self.__evaluate_frame(
                 frame_number,
                 states,
@@ -271,7 +242,6 @@ class TrackAnalyzer:
                 previous_frame_number,
                 target_attribs
             )
-
             previous_frame_number = frame_number
             for attribute, state in states.items():
                 previous_attrib_states[attribute] = state
@@ -291,12 +261,10 @@ class TrackAnalyzer:
             - OrderedDict: Updated attribute states of the current frame
         """
         any_attribute_state_is_active = any([state=='true' for state in attribute_states.values()])
-
         if not any_attribute_state_is_active:
             attribute_states[c.BASE_CLASS] = 'true'
         else:
             attribute_states[c.BASE_CLASS] = 'false'
-
         return attribute_states
 
 
@@ -309,7 +277,6 @@ class TrackAnalyzer:
         """
         attributes = [attribute for attribute in self.target_attributes]
         attributes.append(c.BASE_CLASS)
-
         return attributes
 
 
@@ -338,20 +305,15 @@ class TrackAnalyzer:
             track_with_cuts = (frame_number != previous_frame_number + 1)
         except TypeError:
             track_with_cuts = False
-
         for attribute, state in states.items():
             if attribute in target_attribs:
-
                 previous_state = previous_attrib_states[attribute]
-
                 # Basic checks for changing of attribute status
                 is_last_frame = (frame_number == self.last_frame)
                 attribute_state_changed = (previous_state != state)
-
                 # More common case where nothing changes
                 if not attribute_state_changed and is_last_frame:
                     continue
-
                 elif attribute_state_changed or track_with_cuts or is_last_frame:
                     self.__mark_frame(
                         attribute,
@@ -388,14 +350,12 @@ class TrackAnalyzer:
         previous_is_false = (previous_state == 'false')
         current_is_true = (state == 'true')
         current_is_false = (state == 'false')
-
         # Markers type conditions - all 5 types of outcomes
         first_frame = (no_previous and current_is_true)
         last_frame = (is_last_frame and current_is_true)
         start_frame = (previous_is_false and current_is_true)
         end_frame = (previous_is_true and current_is_false)
         cut_frame = (previous_is_true and current_is_true and track_with_cuts)
-
         if first_frame or start_frame:
             self.dynamic_markers[attribute][frame_number] = self.activation_name
         elif cut_frame:
@@ -418,24 +378,18 @@ class TrackAnalyzer:
         for attribute in self.attributes:
             if attribute in self.target_attributes:
                 self.single_markers[attribute] = OrderedDict()
-
         # Collecting all attributes in one pass over all frames
         # TODO: Add param for mixing classes
         for frame, metadata in self.track_frames.items():
             attribute_states = self.__add_base_class_attribute(metadata['attributes'])
-
             coordinates = metadata['coordinates']
-
             for attribute, state in attribute_states.items():
                 state_is_positive = (state == 'true')
                 attribute_is_target = (attribute in self.single_markers.keys())
-
                 if state_is_positive and attribute_is_target:
                     sequence_frame = OrderedDict()
                     sequence_frame[frame] = coordinates
-
                     new_sequence = tuple((attribute, self.mode, sequence_frame))
-
                     self.sequences[attribute].append(new_sequence)
 
 
@@ -451,12 +405,9 @@ class TrackAnalyzer:
             self.dynamic_types,
             self.static_types
         )
-
         for marker_category in general_marker_types:
             for attribute, frames in marker_category.items():
-
                 for frame, marker_type in frames.items():
-
                     if marker_type in target_marker_types:
                         new_sequence = self.__get_target_sequence(
                             frame,
@@ -464,7 +415,6 @@ class TrackAnalyzer:
                             attribute,
                             extend_with_reversed,
                         )
-
                     if new_sequence is not None:
                         self.sequences[attribute].append(new_sequence)
 
@@ -479,13 +429,11 @@ class TrackAnalyzer:
             - tuple: Markers which will be added to sequences
         """
         supported_marker_types = []
-
         for marker_type in marker_types:
             if isinstance(marker_type, tuple):
                 supported_marker_types += list(marker_type)
             else:
                 supported_marker_types.append(marker_type)
-
         return tuple(supported_marker_types)
 
 
@@ -507,16 +455,13 @@ class TrackAnalyzer:
         new_sequence = None
         sequence_type = None
         sequence_status = 'failed'
-
         if marker_type in self.dynamic_types:
             sequence_type = f'dynamic'
         elif marker_type in self.static_types:
             sequence_type = 'static'
-
         # Testing frames
         sequence_indexes = self.__get_chunk_indexes(frame)
         indexes_are_avalible = self.__test_frames_availibility(sequence_indexes)
-
         if indexes_are_avalible:
             sequence_status = self.__test_frame_status_integrity(
                 frame,
@@ -524,7 +469,6 @@ class TrackAnalyzer:
                 marker_type,
                 sequence_indexes,
             )
-
         if sequence_status == 'passed':
             new_sequence = self.__get_sequence(
                 attribute,
@@ -533,7 +477,6 @@ class TrackAnalyzer:
                 extend_with_reversed,
                 marker_type,
             )
-
         return new_sequence
 
 
@@ -563,19 +506,15 @@ class TrackAnalyzer:
             """
             left = []
             right = []
-
             for i in range(1, steps + 1):
                 left.append(frame + (c.FRAME_STEP * -i))
                 right.append(frame + (c.FRAME_STEP * i))
-
             return sorted(left), sorted(right)
 
         added_size = c.CHUNK_SIZE - 1
         steps = int(added_size / 2)
         left, right = get_shifts(frame, steps)
-
         frames = left + [frame] + right
-
         return frames
 
 
@@ -591,7 +530,6 @@ class TrackAnalyzer:
         """
         all_indexes_are_availible_in_track_status = \
             all([(idx in self.track_frames.keys()) for idx in frames])
-
         return all_indexes_are_availible_in_track_status
 
 
@@ -611,12 +549,9 @@ class TrackAnalyzer:
             str: Sequence status: 'passed' or 'failed'(default)
         """
         sequence_status = 'failed'
-
         start_frame = frames[0]
         end_frame = frames[-1]
-
         subframes = list(range(start_frame, end_frame + 1, 1))
-
         if attribute != c.BASE_CLASS:
             sequence_status = self.__evaluate_attrib_frames(
                 frame,
@@ -624,20 +559,16 @@ class TrackAnalyzer:
                 marker_type,
                 subframes
             )
-
         elif attribute == c.BASE_CLASS:
             status_is_stable = self.__check_attrib_status(
                 attribute,
                 subframes,
                 'true'
             )
-
             if status_is_stable:
                 sequence_status = 'passed'
-
         if len(subframes) != self.frames_in_chunk:
             sequence_status = 'failed'
-
         return sequence_status
 
 
@@ -656,27 +587,21 @@ class TrackAnalyzer:
             str: Check status - 'passed' or 'failed'(dafault)
         """
         chunk_status = 'failed'
-
         left_frames, right_frames = self.__get_attrib_slice(marker_type, frame, frames)
-
         if marker_type==self.activation_name:
             left_is_false, right_is_true = (
                 self.__check_attrib_status(attribute, left_frames, 'false'),
                 self.__check_attrib_status(attribute, right_frames, 'true'),
             )
-
             if left_is_false and right_is_true:
                 chunk_status = 'passed'
-
         elif marker_type==self.deactivation_name:
             left_is_true, right_is_false = (
                 self.__check_attrib_status(attribute, left_frames, 'true'),
                 self.__check_attrib_status(attribute, right_frames, 'false'),
             )
-
             if left_is_true and right_is_false:
                 chunk_status = 'passed'
-
         return chunk_status
 
 
@@ -692,13 +617,10 @@ class TrackAnalyzer:
             tuples: Left and right slices
         """
         center_idx = frames.index(frame)
-
         if marker_type==self.deactivation_name:
             center_idx += 1
-
         left_slice = frames[:center_idx]
         right_slice = frames[center_idx:]
-
         return left_slice, right_slice
 
 
@@ -730,12 +652,10 @@ class TrackAnalyzer:
                     return True
                 else:
                     return False
-
             except KeyError:
                 return False
 
         slice_status = all([compare_frame_status_with_target(frame) for frame in frames])
-
         return slice_status
 
 
@@ -764,15 +684,11 @@ class TrackAnalyzer:
         assert sequence_type is not None
         sequence_class = f"{attribute}_{marker_type}"
         sequence_frames = OrderedDict()
-
         if extend_with_reversed and (marker_type==self.deactivation_name):
             sequence_indexes = list(reversed(sequence_indexes))
-
         for frame in sequence_indexes:
             sequence_frames[frame] = self.track_frames[frame]['coordinates']
-
         new_sequence = tuple((sequence_class, sequence_type, sequence_frames))
-
         return new_sequence
 
 
@@ -784,15 +700,12 @@ class TrackAnalyzer:
             - *static_attributes (tuples): Names of static attributes
         """
         self.static_markers = OrderedDict()
-
         for attribute in static_attributes:
             self.static_markers[attribute] = OrderedDict()
-
             static_markers = self.__get_static_markers(
                 attribute_name=attribute,
                 dynamic_markers=self.dynamic_markers[attribute],
             )
-
             for marker in static_markers:
                 self.static_markers[attribute][marker] = self.static_name
 
@@ -810,17 +723,14 @@ class TrackAnalyzer:
             list: Frame numbers of static markers
         """
         static_markers = []
-
         # Collects pairs of start and end frames
         tmp_interval = []
-
         # There MUST be activation and deactivation marker on the track
         # So this iterator combines them into pairs and collect inner centers
         # for the markers, to skip all overlapping frames and speed up yielding
         for frame, dynamic_type in dynamic_markers.items():
             if dynamic_type == self.activation_name:
                 tmp_interval.append(frame)
-
             elif dynamic_type == self.deactivation_name:
                 tmp_interval.append(frame)
 
@@ -829,11 +739,8 @@ class TrackAnalyzer:
                         attribute_name,
                         tmp_interval,
                     )
-
                     static_markers += static_range
-
                 tmp_interval = []
-
         return static_markers
 
 
@@ -858,42 +765,32 @@ class TrackAnalyzer:
             list: Indexes of frames with shifting.
         """
         assert len(interval) == 2, f"Wrong interval shape of {attribute_name}"
-
         start_idx = interval[0]
         end_idx = interval[1]
-
         assert start_idx < end_idx, f"Mixed indexes at {attribute_name}"
-
         static_range = []
         range_is_valid = False
-
         interval_frames = list(range(start_idx, end_idx))
         interval_size = len(interval_frames)
-
         # Check frames from full interval to avoid errors in borders
         frames_status_is_stable = self.__check_attrib_status(
             attribute_name,
             interval_frames,
             target_value='true'
         )
-
         interval_has_enough_frames_for_slicing = \
             (interval_size >= (self.frames_in_chunk * c.CHUNK_BORDER_RATIO))
-
         if interval_has_enough_frames_for_slicing:
             interval_frames, interval_size = \
                 self.__get_interval_slice(interval_frames)
-
             if frames_status_is_stable:
                 range_is_valid = self.__test_interval_frames(
                     interval_frames,
                     interval_size
                 )
-
             # Slicer allows to skip subframes and reduce iterator length
             if range_is_valid:
                 static_range = interval_frames[::self.frames_in_chunk]
-
         return static_range
 
 
@@ -917,10 +814,8 @@ class TrackAnalyzer:
             tuple: (all sliced frames, size of the resulting interval)
         """
         cut_size = (self.__get_side_size_for_chunk() * c.CHUNK_BORDER_RATIO)
-
         interval_frames = interval_frames[cut_size:-cut_size]
         interval_size = len(interval_frames)
-
         return interval_frames, interval_size
 
 
@@ -936,11 +831,8 @@ class TrackAnalyzer:
             bool: If interval is valid - True, else - False
         """
         interval_is_valid = False
-
         frames_are_availible = self.__test_frames_availibility(interval_frames)
         frames_size_supported = (interval_size >= self.frames_in_chunk)
-
         if frames_are_availible and frames_size_supported:
             interval_is_valid = True
-
         return interval_is_valid
