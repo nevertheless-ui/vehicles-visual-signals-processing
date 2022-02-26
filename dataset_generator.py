@@ -12,6 +12,7 @@ import os
 import argparse
 
 from utils import constants as c
+from utils import args_parser
 from utils import logging_tool
 from utils import filesystem_tool as fs
 from utils import annotation_parser
@@ -226,58 +227,12 @@ def check_settings():
 
 
 
-def add_custom_arguments(parser):
-    """Adding new optional arguments for parser to
-
-    Args:
-        parser (obj): Empty parser object
-
-    Returns:
-        obj: Parser object with custom arguments
-    """
-    parser.add_argument(
-        '-i',
-        '--input',
-        type=str,
-        default=c.DATA_DIR_PATH,
-        help='Input directory with videos and annotation archive'
-    )
-    parser.add_argument(
-        '-o',
-        '--output',
-        type=str,
-        default=c.DATASET_DIR_PATH,
-        help='Output directory for dataset'
-    )
-    parser.add_argument(
-        '-m',
-        '--mode',
-        type=str,
-        default=c.GENERATOR_MODE,
-        choices=['sequence','singleshot'],
-        help='Dataset generator mode. Sequence for MJPG and singleshot for JPG'
-    )
-    parser.add_argument(
-        '--overwrite',
-        action="store_true",
-        help='Overwrite current dataset directory if exists'
-    )
-    parser.add_argument(
-        '--debug',
-        action="store_true",
-        help='Enable debug log writing'
-    )
-
-    return parser
-
-
-
 if __name__ == '__main__':
     """Main module. Initializes dataset generator.
     """
     check_settings()
     parser = argparse.ArgumentParser()
-    parser = add_custom_arguments(parser)
+    parser = args_parser.add_custom_arguments(parser)
     args = parser.parse_args()
     input_path = args.input
     output_path = args.output
