@@ -427,7 +427,7 @@ class TrackAnalyzer:
                             extend_with_reversed,
                         )
                     if new_sequence is not None:
-                        self.sequences[attribute].append(new_sequence)
+                        self.sequences.setdefault(attribute, []).append(new_sequence)
 
 
     @staticmethod
