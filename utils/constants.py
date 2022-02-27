@@ -39,6 +39,7 @@ STATIC_NAME = 'static'
 BASE_CLASS = 'idle'
 CHUNK_SIZE = 5 # frames - MUST BE ODD
 FRAME_STEP = 3 # frames shift
+SKIP_FRAMES_NEAR_SWITCH_MARKER_SIZE = 5 # Number of frames that will be skipped in singleshot mode
 CHUNK_BORDER_RATIO = 2 # Slice border multiplyer to make bigger for dynamic markers
 CLASS_OVERLAY = True  # Same frames can be used for different classes
 CLASS_BALANCED = False # Balance classes?

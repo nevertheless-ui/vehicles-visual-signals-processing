@@ -20,7 +20,8 @@ from utils import video_writer
 
 
 
-def analyze_video(source_path, output_path, file, annotation, overwrite, mode, logger):
+def analyze_video(source_path, output_path, file, annotation,
+                  overwrite, mode, logger, allow_class_mixing):
     """Creates extraction task.
 
     Args:
@@ -28,7 +29,12 @@ def analyze_video(source_path, output_path, file, annotation, overwrite, mode, l
         output_path (str): Path to the dataset directory
         file (srt): Video name
         annotation (str): Annotation name
+        overwrite (bool): Overwrite dataset if already exists
         mode (str): 'sequence' or 'singleshot'
+        logger (obj): logging class object
+        allow_class_mixing (bool): e.g. If True - One frame can be added to
+            brake and turn_left classes at the same time. Else - mixed signals
+            frames will be dropped as confusing.
 
     Returns:
         obj: ExtractionTask instance
@@ -43,6 +49,7 @@ def analyze_video(source_path, output_path, file, annotation, overwrite, mode, l
         overwrite,
         mode,
         logger,
+        allow_class_mixing
     )
     extraction.read_annotation()
     extraction.is_supported = fs.supported_labels_check(extraction)
@@ -51,7 +58,8 @@ def analyze_video(source_path, output_path, file, annotation, overwrite, mode, l
 
 
 
-def generate_dataset(video_path, output_path, mode, overwrite, logger):
+def generate_dataset(video_path, output_path, mode,
+                     overwrite, logger, allow_class_mixing):
     """Runs generator. Analyzes files in 'video_path' and if finds some
     supported ones (with annotation)
 
@@ -64,6 +72,11 @@ def generate_dataset(video_path, output_path, mode, overwrite, logger):
             directory
         output_path (str): Path to the output directory
         mode (str): 'sequence' or 'singleshot'
+        overwrite (bool): Overwrite dataset if already exists
+        logger (obj): logging class object
+        allow_class_mixing (bool): e.g. If True - One frame can be added to
+            brake and turn_left classes at the same time. Else - mixed signals
+            frames will be dropped as confusing.
     """
     supported_files = fs.extract_video_from_path(video_path)
     for file, annotation in supported_files.items():
@@ -75,6 +88,7 @@ def generate_dataset(video_path, output_path, mode, overwrite, logger):
             overwrite,
             mode,
             logger,
+            allow_class_mixing,
         )
         if extraction.is_supported:
             export_chunks_from_extraction(extraction)
@@ -134,6 +148,7 @@ if __name__ == '__main__':
     input_path = args.input
     output_path = args.output
     generator_mode = args.mode
+    allow_class_mixing = args.allow_class_mixing
     # Some optional arguments - essential for script OVERWRITE data and DEBUG
     if args.overwrite:
         overwrite = args.overwrite
@@ -150,4 +165,5 @@ if __name__ == '__main__':
         path=output_path,
         overwrite=overwrite
     )
-    generate_dataset(input_path, output_path, generator_mode, overwrite, logger)
+    generate_dataset(input_path, output_path, generator_mode,
+                     overwrite, logger, allow_class_mixing)

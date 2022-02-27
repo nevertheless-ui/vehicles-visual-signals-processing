@@ -8,8 +8,8 @@ from utils import annotation_parser
 
 
 class ExtractionTask:
-    def __init__(self, import_path, export_path,
-                 filename, annotation, overwrite, mode, logger):
+    def __init__(self, import_path, export_path, filename,
+                 annotation, overwrite, mode, logger, allow_class_mixing):
         """Task for extraction from video file.
 
         Args:
@@ -25,6 +25,7 @@ class ExtractionTask:
         self.overwrite = overwrite
         self.mode = mode
         self.logger = logger
+        self.allow_class_mixing = allow_class_mixing
         # Read internal constants
         self.base_class = c.BASE_CLASS
         self.class_overlay = c.CLASS_OVERLAY

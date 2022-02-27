@@ -44,7 +44,7 @@ def get_chunks_stats(chunks):
     return stats
 
 
-def get_chunks(tracks, settings, labels, frames_total):
+def get_chunks(tracks, settings, labels, frames_total, allow_class_mixing):
     """Iterates over tracks and analyze each track. Runs analysis tool
     to generate sequences. Sequences from tracks are appended to general
     chunks list with adding attributes of track, label, class, type and
@@ -55,6 +55,9 @@ def get_chunks(tracks, settings, labels, frames_total):
         settings (dict): Script settings
         labels (dict): Labels from .info of ExtractionTask instance
         frames_total (int): Record from .info of ExtractionTask instance
+        allow_class_mixing (bool): e.g. If True - One frame can be added to
+            brake and turn_left classes at the same time. Else - mixed signals
+            frames will be dropped as confusing.
 
     Returns:
         tuple: ({'track':(int), 'label':(str), 'class':(str),
@@ -66,7 +69,7 @@ def get_chunks(tracks, settings, labels, frames_total):
     """
     chunks = []
     for track in tracks:
-        analyst = TrackAnalyzer(track, settings, labels, frames_total)
+        analyst = TrackAnalyzer(track, settings, labels, frames_total, allow_class_mixing)
         analyst.generate_sequences(
             extend_with_reversed=settings['extend_with_reversed']
         )
@@ -124,7 +127,8 @@ def get_script(extraction):
         tracks=extraction.annotation_tracks,
         settings=script['script_settings'],
         labels=extraction.info['labels'],
-        frames_total=extraction.info['frames_size']
+        frames_total=extraction.info['frames_size'],
+        allow_class_mixing=extraction.allow_class_mixing
     )
     script['statistics'] = get_chunks_stats(script['chunks'])
 

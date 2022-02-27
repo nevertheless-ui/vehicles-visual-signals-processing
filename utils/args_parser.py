@@ -44,5 +44,10 @@ def add_custom_arguments(parser):
         action="store_true",
         help='Enable debug log writing'
     )
+    parser.add_argument(
+        '--allow_class_mixing',
+        action="store_true",
+        help='Allows extraction of singleshot frames with mixed signals'
+    )
 
     return parser

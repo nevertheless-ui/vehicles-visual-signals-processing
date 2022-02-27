@@ -8,7 +8,7 @@ from utils import constants as c
 
 
 class TrackAnalyzer:
-    def __init__(self, track, settings, labels, frames_total):
+    def __init__(self, track, settings, labels, frames_total, allow_class_mixing):
         """Analyzer class for track in video annotation.
         Do not use directly. Must be called from 'video_editor' module.
         Basic track analysis starts after initialization in automatic
@@ -23,12 +23,14 @@ class TrackAnalyzer:
             - settings - Script settings from video editor
             - labels - Labels info from extraction task
             - frames_total - Frames number in video
+            - allow_class_mixing - bool
         1. Call method "generate_sequences()" to create attribute
             'sequences'
         2. Iterate over attribute 'sequences' to collect data for
             chunks
         """
         self.track_data = track
+        self.allow_class_mixing = allow_class_mixing
         self.overlay_policy = c.CLASS_OVERLAY
         self.chunk_size = c.CHUNK_SIZE
         self.is_depleted = False
@@ -37,20 +39,25 @@ class TrackAnalyzer:
         self.last_frame = 0
         self.first_frame = int(frames_total)
         self.frames_in_chunk = self.__get_slice_size_for_chunk()
+
         # Will be used to change sequence generator behaviour
         # BASE_CLASS usually is a static type and more common in track
         self.activation_name = c.ACTIVATION_NAME
         self.deactivation_name = c.DEACTIVATION_NAME
         self.static_name = c.STATIC_NAME
+        self.border_frames_num = c.SKIP_FRAMES_NEAR_SWITCH_MARKER_SIZE
         self.dynamic_types = (self.activation_name, self.deactivation_name)
         self.static_types = (self.static_name)
         self.sequences = OrderedDict()
+        self.frames_in_attributes = dict()
+        self.frames_with_mix_classes = []
+        self.frames_on_boarders = []
+
         # Loader of the attributes
         self.__load_track_info()
         self.__load_track_data()
-        if self.mode == 'sequence':
-            self.__add_dynamic_markers()
-            self.__add_static_markers(c.BASE_CLASS)
+        self.__add_dynamic_markers()
+        self.__add_static_markers(c.BASE_CLASS)
 
         #self.show_debug()                 # For developing process only
 
@@ -65,6 +72,10 @@ class TrackAnalyzer:
         """
         if self.mode == 'singleshot':
             self.__add_singleshot_sequences_from_attributes()
+            if not self.allow_class_mixing:
+                self.__find_frames_with_mixed_class()
+            self.__find_border_frames()
+
         elif self.mode == 'sequence':
             enough_frames_in_track = (len(self.track_frames) >= self.frames_in_chunk)
             if enough_frames_in_track:
@@ -138,9 +149,6 @@ class TrackAnalyzer:
         self.attributes = self.labels[self.track_label]
         self.target_attributes = self.settings['target_attributes'][self.track_label]
         self.mode = self.settings['mode']
-        for attrib in self.target_attributes:
-            self.sequences[attrib] = []
-        self.sequences[c.BASE_CLASS] = []
         self.track_frames = OrderedDict()
 
 
@@ -378,11 +386,13 @@ class TrackAnalyzer:
         for attribute in self.attributes:
             if attribute in self.target_attributes:
                 self.single_markers[attribute] = OrderedDict()
+
         # Collecting all attributes in one pass over all frames
         # TODO: Add param for mixing classes
         for frame, metadata in self.track_frames.items():
-            attribute_states = self.__add_base_class_attribute(metadata['attributes'])
+            attribute_states = metadata['attributes']
             coordinates = metadata['coordinates']
+            assert any([attribute=='true' for attribute in attribute_states.values()])
             for attribute, state in attribute_states.items():
                 state_is_positive = (state == 'true')
                 attribute_is_target = (attribute in self.single_markers.keys())
@@ -390,7 +400,8 @@ class TrackAnalyzer:
                     sequence_frame = OrderedDict()
                     sequence_frame[frame] = coordinates
                     new_sequence = tuple((attribute, self.mode, sequence_frame))
-                    self.sequences[attribute].append(new_sequence)
+                    self.frames_in_attributes.setdefault(attribute, []).append(frame)
+                    self.sequences.setdefault(attribute, []).append(new_sequence)
 
 
     def __add_sequences_from_markers(self, extend_with_reversed, *general_marker_types):
@@ -836,3 +847,39 @@ class TrackAnalyzer:
         if frames_are_availible and frames_size_supported:
             interval_is_valid = True
         return interval_is_valid
+
+
+    def __find_frames_with_mixed_class(self):
+        for frame in self.track_frames.keys():
+            classes_in_frame = sum([(frame in self.frames_in_attributes[attribute])
+                                    for attribute in self.frames_in_attributes.keys()])
+            if classes_in_frame >= 2:
+                self.frames_with_mix_classes.append(frame)
+
+
+    def __find_border_frames(self):
+        pass
+        """
+        current_markers = {**self.dynamic_markers, **self.static_markers}
+        print(self.sequences.items())
+        print('***')
+        print(current_markers)
+        for attribute, marker in current_markers.items():
+            border_frames = []
+            if attribute in self.single_markers.keys():
+                for frame, marker_type in marker.items():
+                    if marker_type==self.activation_name:
+                        border_frames += list(range(frame,
+                                                    frame + self.border_frames_num))
+                    elif marker_type==self.deactivation_name:
+                        border_frames += list(range((frame + 1) - self.border_frames_num,
+                                                    (frame + 1)))
+
+            print(attribute, border_frames)
+            for frame in border_frames:
+                if frame in self.single_markers.keys():
+                    del self.single_markers[frame]
+
+            print(self.single_markers.keys())
+
+        input()"""
