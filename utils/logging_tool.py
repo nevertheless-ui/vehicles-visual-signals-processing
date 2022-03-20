@@ -32,7 +32,6 @@ def log_writer_report(logger, writer_report):
     Args:
         writer_report (OrderedDict): Any key
     """
-    assert isinstance(writer_report, OrderedDict()), 'Writer report type is incorrect'
     for name, value in writer_report.items():
         if name == 'Broken chunks list' and len(value) > 0:
             for record in value:
