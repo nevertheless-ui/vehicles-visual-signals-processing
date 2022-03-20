@@ -50,8 +50,7 @@ class TrackAnalyzer:
         self.static_types = (self.static_name)
         self.sequences = OrderedDict()
         self.frames_in_attributes = dict()
-        self.frames_with_mix_classes = []
-        self.frames_on_boarders = []
+        self.frames_to_skip = []
 
         # Loader of the attributes
         self.__load_track_info()
@@ -74,7 +73,10 @@ class TrackAnalyzer:
             self.__add_singleshot_sequences_from_attributes()
             if not self.allow_class_mixing:
                 self.__find_frames_with_mixed_class()
-            self.__find_border_frames()
+            self.__find_track_border_frames()
+            self.__find_dynamic_border_frames()
+            self.__remove_duplicated_frames()
+            self.__remove_out_of_track_frames()
 
         elif self.mode == 'sequence':
             enough_frames_in_track = (len(self.track_frames) >= self.frames_in_chunk)
@@ -393,6 +395,7 @@ class TrackAnalyzer:
             attribute_states = metadata['attributes']
             coordinates = metadata['coordinates']
             assert any([attribute=='true' for attribute in attribute_states.values()])
+            #print(attribute_states.items())
             for attribute, state in attribute_states.items():
                 state_is_positive = (state == 'true')
                 attribute_is_target = (attribute in self.single_markers.keys())
@@ -402,6 +405,8 @@ class TrackAnalyzer:
                     new_sequence = tuple((attribute, self.mode, sequence_frame))
                     self.frames_in_attributes.setdefault(attribute, []).append(frame)
                     self.sequences.setdefault(attribute, []).append(new_sequence)
+        #print(self.frames_in_attributes.items())
+        #input()
 
 
     def __add_sequences_from_markers(self, extend_with_reversed, *general_marker_types):
@@ -854,32 +859,60 @@ class TrackAnalyzer:
             classes_in_frame = sum([(frame in self.frames_in_attributes[attribute])
                                     for attribute in self.frames_in_attributes.keys()])
             if classes_in_frame >= 2:
-                self.frames_with_mix_classes.append(frame)
+                near_frames = self.__get_near_frames(frame)
+                #print(self.frames_in_attributes.items())
+                #print(frame, [attribute for attribute in self.frames_in_attributes.keys() if (frame in self.frames_in_attributes[attribute])])
+                #print(near_frames)
+                #print(self.dynamic_markers)
+                #input()
+                for subframe in near_frames:
+                    self.frames_to_skip.append(subframe)
+        #self.frames_to_skip = set(self.frames_to_skip)
 
 
-    def __find_border_frames(self):
-        pass
-        """
-        current_markers = {**self.dynamic_markers, **self.static_markers}
-        print(self.sequences.items())
-        print('***')
-        print(current_markers)
-        for attribute, marker in current_markers.items():
-            border_frames = []
-            if attribute in self.single_markers.keys():
-                for frame, marker_type in marker.items():
-                    if marker_type==self.activation_name:
-                        border_frames += list(range(frame,
-                                                    frame + self.border_frames_num))
-                    elif marker_type==self.deactivation_name:
-                        border_frames += list(range((frame + 1) - self.border_frames_num,
-                                                    (frame + 1)))
+    def __find_track_border_frames(self):
+        for frame in self.track_frames.keys():
+            near_frames = self.__get_near_frames(frame)
+            frame_is_near_border = \
+                not all(
+                    [frame in self.track_frames.keys() for frame in near_frames]
+                )
+            if frame_is_near_border:
+                self.frames_to_skip.append(frame)
 
-            print(attribute, border_frames)
-            for frame in border_frames:
-                if frame in self.single_markers.keys():
-                    del self.single_markers[frame]
 
-            print(self.single_markers.keys())
+    def __find_dynamic_border_frames(self):
+        for switches in self.dynamic_markers.values():
+            for frame in switches.keys():
+                near_frames = self.__get_near_frames(frame)
+                for subframe in near_frames:
+                    self.frames_to_skip.append(subframe)
 
-        input()"""
+
+    def __get_near_frames(self, frame):
+        near_frames = []
+        near_frames += list(range(frame, frame+self.border_frames_num, 1)) # Right
+        near_frames += list(range(frame, frame-self.border_frames_num, -1)) # Left
+        near_frames.sort()
+        if 0 in near_frames:
+            near_frames[near_frames.index(0):]
+        return near_frames
+
+
+    def __remove_duplicated_frames(self):
+        self.frames_to_skip = [
+            i for n, i in enumerate(self.frames_to_skip)
+            if i not in self.frames_to_skip[:n]
+        ]
+        self.frames_to_skip.sort()
+
+
+    def __remove_out_of_track_frames(self):
+        raw_frames = self.frames_to_skip.copy()
+        for frame in raw_frames:
+            if frame not in self.track_frames.keys():
+                self.frames_to_skip.remove(frame)
+        #print('all_frames', self.track_frames.keys())
+        #print('mixed', self.frames_to_skip)
+        #print('markers', self.dynamic_markers.items())
+        #input()

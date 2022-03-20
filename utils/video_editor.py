@@ -73,16 +73,28 @@ def get_chunks(tracks, settings, labels, frames_total, allow_class_mixing):
         analyst.generate_sequences(
             extend_with_reversed=settings['extend_with_reversed']
         )
-        for attribute_sequences in analyst.sequences.values():
-            for sequence_class, sequence_type, sequence_frames in attribute_sequences:
-                new_chunk = {
-                    'track':analyst.track_id,
-                    'label':analyst.track_label,
-                    'class':sequence_class,
-                    'type':sequence_type,
-                    'sequence':sequence_frames,
-                }
-                chunks.append(new_chunk)
+        #print(f'Frames in track: {list(analyst.track_frames.keys())}')
+        #print(f'Mixed signals frames: {analyst.frames_with_mix_classes}')
+        #print(f'Border signals frames: {analyst.frames_near_border}')
+        #input()
+        for sequence in analyst.sequences.values():
+            for sequence_class, sequence_type, sequence_frames in sequence:
+                skip_frames_in_sequence = \
+                    any(
+                        [frame in analyst.frames_to_skip
+                         for frame in sequence_frames.keys()]
+                    )
+                if not skip_frames_in_sequence:
+                    new_chunk = {
+                        'track':analyst.track_id,
+                        'label':analyst.track_label,
+                        'class':sequence_class,
+                        'type':sequence_type,
+                        'sequence':sequence_frames,
+                    }
+                    chunks.append(new_chunk)
+                else:
+                    pass
     return tuple(chunks)
 
 
