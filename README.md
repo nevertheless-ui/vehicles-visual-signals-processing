@@ -5,6 +5,13 @@ Project for vehicles signals recognition for Master Degree Paper, Russia, Moscow
 - Annotation tool: [CVAT](https://github.com/openvinotoolkit/cvat)
 - Project is active
 
+### USAGE
+
+There are 2 types of NN in this repository:
+1. CNN for single image classification - train_cnn_model.py
+2. LSTM for sequence classification - train_lstm_model.py
+
+HINT: use key -h to check arguments to check parameters of learning
 
 ### DATASETS
 
@@ -15,6 +22,9 @@ Project for vehicles signals recognition for Master Degree Paper, Russia, Moscow
 
 ![Example of sequences](https://github.com/nevertheless-ui/vehicles-visual-signals-processing/blob/main/images/dataset_sequence_example.jpg)
 
+### MODEL RESULTS
+
+pass
 
 ### DATASET COOKBOOK:
 
