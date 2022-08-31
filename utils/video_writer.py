@@ -3,6 +3,7 @@
 
 import os
 import cv2
+import numpy as np
 
 from collections import OrderedDict
 
@@ -28,7 +29,7 @@ class ChunkWriter:
         self.script = script
         self.logger = logger
         self.mode = self.script['script_settings']['mode']
-        if self.mode == 'singleshot':
+        if self.mode == 'singleshot' or self.mode == 'difference':
             self.fps = 1
             self.chunk_size = 1
         elif self.mode == 'sequence':
@@ -65,14 +66,18 @@ class ChunkWriter:
             chunk_path = self.__get_chunk_path(num, frame_num, chunk)
             log_msg = f"Writing: {chunk_path}"
             output = self.__get_output(chunk_path)
-            for frame, coordinates in chunk['sequence'].items():
-                self.__add_frame_to_chunk(output, frame, coordinates)
+            if self.mode == 'difference':
+                sequences = list(chunk['sequence'].items())
+                self.__add_difference_chunk(output, sequences)
+            else:
+                for frame, coordinates in chunk['sequence'].items():
+                    self.__add_frame_to_chunk(output, frame, coordinates)
 
             output.release()
 
             if self.mode == 'sequence':
                 chunk_validation_passed = self.__validate_chunk(chunk_path)
-            if self.mode!='singleshot' and not chunk_validation_passed:
+            if self.mode not in ['singleshot', 'difference'] and not chunk_validation_passed:
                 self.broken_chunks.append(chunk_path)
                 try:
                     os.remove(chunk_path)
@@ -165,14 +170,14 @@ class ChunkWriter:
         """
         class_path = os.path.join(self.output_path, chunk['class'])
         file = self.source_name
-        extension = 'mjpg'
+        extension = c.OUTPUT_EXTENTION
         label_name = chunk['label']
         class_name = chunk['class']
         class_type = chunk['type']
         track_num = str.zfill(str(chunk['track']), 4)
         chunk_num = str.zfill(str(num), 4)
         frame_num = str.zfill(str(frame_num), 6)
-        if class_type == 'singleshot':
+        if self.mode in ['singleshot', 'difference']:
             extension = 'jpg'
         chunk_name = \
             f"{file}_{label_name}_{class_type}_{class_name}_" \
@@ -199,6 +204,78 @@ class ChunkWriter:
         return video_output
 
 
+    def __get_frame_from_capture(self, frame, coordinates):
+        self.capture.set(1, frame)
+        status, image = self.capture.read()
+        if status:
+            # Box coordinates from two points: (A[ax, ay], B[bx, by])
+            ax, ay, bx, by = coordinates
+            image_crop = image[ay:by, ax:bx]
+        else:
+            # Black image for empty
+            image_crop = np.zeros([1, 1, 3], dtype=np.uint8)
+        image_crop = self.__resize_image_with_fill(
+            input_image=image_crop,
+            output_image_resolution=c.EXTRACTOR_RESOLUTION
+        )
+        return image_crop
+
+
+    def __add_difference_chunk(self, output, sequences):
+        """
+        TODO: Add docstring
+        """
+        img_end_aligned = np.zeros
+        img_start = self.__get_frame_from_capture(sequences[0][0], sequences[0][1])
+        img_end = self.__get_frame_from_capture(sequences[-1][0], sequences[-1][1])
+
+        img_start_gray = cv2.cvtColor(img_start, cv2.COLOR_BGR2GRAY)
+        img_end_gray = cv2.cvtColor(img_end, cv2.COLOR_BGR2GRAY)
+        cv2.imwrite('1_grey.jpg', img_start_gray)
+        cv2.imwrite('2_grey.jpg', img_end_gray)
+        cv2.imwrite('1.jpg', img_start)
+        cv2.imwrite('2.jpg', img_end)
+        print(img_start.shape, img_end.shape)
+        sz = img_start.shape
+        img_end_aligned = np.zeros(sz)
+        warp_mode = cv2.MOTION_HOMOGRAPHY
+        #warp_mode = cv2.MOTION_TRANSLATION
+        if warp_mode == cv2.MOTION_HOMOGRAPHY :
+            warp_matrix = np.eye(3, 3, dtype=np.float32)
+        else :
+            warp_matrix = np.eye(2, 3, dtype=np.float32)
+        number_of_iterations = 5000
+        termination_eps = 1e-2
+        criteria = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT,
+                    number_of_iterations,
+                    termination_eps)
+        (cc, warp_matrix) = cv2.findTransformECC(img_start_gray,
+                                                 img_end_gray,
+                                                 warp_matrix,
+                                                 warp_mode,
+                                                 criteria)
+        if warp_mode==cv2.MOTION_HOMOGRAPHY:
+            # Use warpPerspective for Homography
+            img_end_aligned = cv2.warpPerspective(img_end,
+                                                  warp_matrix,
+                                                  (sz[1],sz[0]),
+                                                  flags=cv2.INTER_LINEAR + cv2.WARP_INVERSE_MAP)
+        else:
+            # Use warpAffine for Translation, Euclidean and Affine
+            img_end_aligned = cv2.warpAffine(img_end,
+                                             warp_matrix,
+                                             (sz[1],sz[0]),
+                                             flags=cv2.INTER_LINEAR + cv2.WARP_INVERSE_MAP)
+        cv2.imwrite('3_aligned.jpg', img_end_aligned)
+        diff = cv2.subtract(img_end_aligned, img_start)
+        threshold = c.DIFF_THRESHOLD
+        # Clear minor details
+        diff[diff >= threshold] = 255
+        diff[diff < threshold] = 0
+
+        output.write(diff)
+
+
     def __add_frame_to_chunk(self, output, frame, coordinates):
         """Adds specific frame from video capture to the cv2.VideoWriter
         object.
@@ -208,15 +285,7 @@ class ChunkWriter:
             frame (int): Target frame number
             coordinates (dict): Coordinates of box to crop image
         """
-        self.capture.set(1, frame)
-        _, image = self.capture.read()
-        # Box coordinates from two points: (A[ax, ay], B[bx, by])
-        ax, ay, bx, by = coordinates
-        image_crop = image[ay:by, ax:bx]
-        image_crop = self.__resize_image_with_fill(
-            input_image=image_crop,
-            output_image_resolution=c.EXTRACTOR_RESOLUTION
-        )
+        image_crop = self.__get_frame_from_capture(frame, coordinates)
         output.write(image_crop)
 
 
