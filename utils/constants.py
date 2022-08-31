@@ -13,24 +13,25 @@ LOGGER_SKIP_ATTRIBUTES = (
 
 
 # DATA
-DATA_DIR_PATH = 'data\\raw_data'
-DATASET_DIR_PATH = 'data\\baseline_dataset'
+DATA_DIR_PATH = 'D:\\data_ml\\raw_data'
+DATASET_DIR_PATH = 'D:\\data_ml\\baseline_dataset'
 EXTRACTOR_RESOLUTION = (500, 500)           # pixels
 #VIDEO_CHUNK_SIZE = 2                       # seconds
 #SKIP_FRAME_NUM = 1
 #TARGET_FPS = 30
 SUPPORTED_VIDEO_FORMATS = ('.ts')
+OUTPUT_EXTENTION = 'avi'
 OVERWRITE = True                            # Rewrite output dataset directory or backup it
 GENERATOR_MODE = 'sequence'                 # 'sequence' or 'singleshot'
-
+DIFF_THRESHOLD = 64                        # Threshold to clean images substraction noise
 
 # VIDEO
 TARGET_ATTRIBUTES = {
     'Vehicle':(
-        'alarm',
+        #'alarm',
         'brake',
-        'turn_left',
-        'turn_right',
+        #'turn_left',
+        #'turn_right',
     )
 }
 ACTIVATION_NAME = 'activation'
@@ -45,7 +46,8 @@ CHUNK_BORDER_RATIO = 2                       # - Slice border multiplyer to make
                                              # bigger for dynamic markers
 CLASS_OVERLAY = True                         # - Same frames can be used for different classes
 CLASS_BALANCED = False                       # - Balance classes?
-ADD_REVERSED = False                         # - EXPERIMENTAL.Try to reverse frames to augment data
+ADD_REVERSED = True                          # - EXPERIMENTAL.Try to reverse frames to augment data
+
 
 
 # ANNOTATION

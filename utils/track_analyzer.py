@@ -78,7 +78,7 @@ class TrackAnalyzer:
             self.__remove_duplicated_frames()
             self.__remove_out_of_track_frames()
 
-        elif self.mode == 'sequence':
+        elif self.mode == 'sequence' or self.mode == 'difference':
             enough_frames_in_track = (len(self.track_frames) >= self.frames_in_chunk)
             if enough_frames_in_track:
                 self.__add_sequences_from_markers(
