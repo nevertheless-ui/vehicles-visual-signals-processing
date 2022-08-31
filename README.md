@@ -8,11 +8,12 @@ Project for vehicles signals recognition for Master Degree Paper, Russia, Moscow
 
 ### DATASETS
 
-- [Baseline dataset.]()
+- [Archive with 3 datasets](https://disk.yandex.ru/d/yyNMBcOJmjEXCA)
+1. Single images (854 items)
+2. Difference betwen first and last frame (838 items)
+3. Sequence of 5 image as AVI files (807 items)
 
-Contains MJPG files with 5 frames each with __ classes: tail-lights (_ items) and break-lights (_ items)
-
-![Example](https://github.com/nevertheless-ui/vehicles-visual-signals-processing/blob/main/images/dataset_sequence_example.jpg)
+![Example of sequences](https://github.com/nevertheless-ui/vehicles-visual-signals-processing/blob/main/images/dataset_sequence_example.jpg)
 
 
 ### DATASET COOKBOOK:
