@@ -24,7 +24,12 @@ HINT: use key -h to check arguments to check parameters of learning
 
 ### MODEL RESULTS
 
-pass
+1. LSTM results
+![LSTM](https://github.com/nevertheless-ui/vehicles-visual-signals-processing/blob/main/results/2022-06-08--13-48-20_ep1000_batch30_validBatch30_lr0.01_lrm0.3_optADAM_LSTM10000_patience150.png)
+2. CNN with single images
+![Singleimages](https://github.com/nevertheless-ui/vehicles-visual-signals-processing/blob/main/results/2022-06-08--14-13-24_ep1000_batch8_validBatch8_lr0.005_lrm0.3_optADAM_LSTM10000_patience100.png)
+3. CNN with difference
+![Differences](https://github.com/nevertheless-ui/vehicles-visual-signals-processing/blob/main/results/2022-06-08--14-40-56_ep1000_batch8_validBatch8_lr0.0005_lrm0.3_optADAM_LSTM10000_patience100.png)
 
 ### DATASET COOKBOOK:
 
