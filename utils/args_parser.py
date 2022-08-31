@@ -31,8 +31,9 @@ def add_custom_arguments(parser):
         '--mode',
         type=str,
         default=c.GENERATOR_MODE,
-        choices=['sequence','singleshot'],
-        help='Dataset generator mode. Sequence for MJPG and singleshot for JPG'
+        choices=['sequence', 'singleshot', 'difference'],
+        help='Dataset generator mode. Sequence for MJPG and singleshot for JPG' \
+             ' , difference generates singleshot with images substraction'
     )
     parser.add_argument(
         '--overwrite',
